@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
+import dynamic from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/providers/AuthProvider";
-import { ClientWrapper } from "@/components/ClientWrapper";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,6 +29,11 @@ export const viewport: Viewport = {
   themeColor: "#1a1a2e",
 };
 
+const AuthProvider = dynamic(
+  () => import("@/providers/AuthProvider").then((mod) => mod.AuthProvider),
+  { ssr: false }
+);
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,12 +45,10 @@ export default function RootLayout({
         className={`${inter.variable} ${robotoMono.variable} font-sans antialiased min-h-screen bg-[#f8f9fa]`}
         suppressHydrationWarning
       >
-        <ClientWrapper>
-          <AuthProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </AuthProvider>
-        </ClientWrapper>
+        <AuthProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
       </body>
     </html>
   );
