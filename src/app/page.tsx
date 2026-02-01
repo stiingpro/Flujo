@@ -51,15 +51,13 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
-
-  if (!user) return null;
   const [activeTab, setActiveTab] = useState<MainTab>('gastos');
 
   const currentYear = new Date().getFullYear();
