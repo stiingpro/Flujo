@@ -1,0 +1,22 @@
+{
+  "name": "FlujoGlobal",
+  "short_name": "FlujoGlobal",
+  "description": "Gestión unificada de flujo de caja empresarial y personal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
