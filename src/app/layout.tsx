@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
-import dynamic from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/providers/AuthProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,11 +28,6 @@ export const viewport: Viewport = {
   maximumScale: 1,
   themeColor: "#1a1a2e",
 };
-
-const AuthProvider = dynamic(
-  () => import("@/providers/AuthProvider").then((mod) => mod.AuthProvider),
-  { ssr: false }
-);
 
 export default function RootLayout({
   children,
