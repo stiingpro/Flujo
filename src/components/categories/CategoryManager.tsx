@@ -420,8 +420,8 @@ export function CategoryManager() {
                         </div>
 
                         {/* Existing Categories with Scroll */}
-                        <ScrollArea className="flex-1 pr-3">
-                            <div className="space-y-4">
+                        <ScrollArea className="flex-1 min-h-0 max-h-[40vh] pr-3">
+                            <div className="space-y-4 pb-4">
                                 <div>
                                     <div className="flex items-center justify-between mb-2 sticky top-0 bg-background py-1 z-10">
                                         <h4 className="text-xs font-semibold text-expense flex items-center gap-1">
