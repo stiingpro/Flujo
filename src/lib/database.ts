@@ -48,16 +48,26 @@ export async function deleteCategory(categoryId: string): Promise<void> {
 }
 
 export async function bulkUpsertCategories(categories: Category[]): Promise<void> {
-    if (categories.length === 0) return;
+    if (categories.length === 0) {
+        console.log('bulkUpsertCategories: No categories to sync');
+        return;
+    }
 
-    const { error } = await supabase
+    console.log('bulkUpsertCategories: Syncing', categories.length, 'categories');
+    console.log('Sample category:', JSON.stringify(categories[0], null, 2));
+
+    const { data, error } = await supabase
         .from('categories')
-        .upsert(categories, { onConflict: 'id' });
+        .upsert(categories, { onConflict: 'id' })
+        .select();
 
     if (error) {
         console.error('Error bulk upserting categories:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
     }
+
+    console.log('bulkUpsertCategories: Successfully synced', data?.length || 0, 'categories');
 }
 
 // ============ TRANSACTIONS ============
@@ -108,19 +118,29 @@ export async function deleteTransaction(transactionId: string): Promise<void> {
 }
 
 export async function bulkUpsertTransactions(transactions: Transaction[]): Promise<void> {
-    if (transactions.length === 0) return;
+    if (transactions.length === 0) {
+        console.log('bulkUpsertTransactions: No transactions to sync');
+        return;
+    }
 
     // Remove the category field from all transactions before saving
     const transactionsData = transactions.map(({ category, ...rest }) => rest);
 
-    const { error } = await supabase
+    console.log('bulkUpsertTransactions: Syncing', transactionsData.length, 'transactions');
+    console.log('Sample transaction:', JSON.stringify(transactionsData[0], null, 2));
+
+    const { data, error } = await supabase
         .from('transactions')
-        .upsert(transactionsData, { onConflict: 'id' });
+        .upsert(transactionsData, { onConflict: 'id' })
+        .select();
 
     if (error) {
         console.error('Error bulk upserting transactions:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
     }
+
+    console.log('bulkUpsertTransactions: Successfully synced', data?.length || 0, 'transactions');
 }
 
 // ============ SYNC FUNCTIONS ============

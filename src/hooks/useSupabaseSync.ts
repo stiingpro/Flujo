@@ -100,15 +100,22 @@ export function useSupabaseSync() {
     }, [user]);
 
     // Sync all current data to Supabase (useful after import)
-    const syncAllToSupabase = useCallback(async () => {
+    // Pass newTransactions and newCategories directly to avoid stale closure data
+    const syncAllToSupabase = useCallback(async (newTransactions?: Transaction[], newCategories?: Category[]) => {
         if (!user || isSyncing.current) return;
 
         isSyncing.current = true;
 
         try {
+            // Use passed data or fall back to store data
+            const transactionsToSync = newTransactions || transactions;
+            const categoriesToSync = newCategories || categories;
+
             // Add user_id to all categories and transactions
-            const categoriesWithUserId = categories.map(c => ({ ...c, user_id: user.id }));
-            const transactionsWithUserId = transactions.map(t => ({ ...t, user_id: user.id }));
+            const categoriesWithUserId = categoriesToSync.map(c => ({ ...c, user_id: user.id }));
+            const transactionsWithUserId = transactionsToSync.map(t => ({ ...t, user_id: user.id }));
+
+            console.log('Syncing to Supabase:', { categories: categoriesWithUserId.length, transactions: transactionsWithUserId.length });
 
             await Promise.all([
                 bulkUpsertCategories(categoriesWithUserId),
@@ -118,7 +125,7 @@ export function useSupabaseSync() {
             toast.success('Datos sincronizados');
         } catch (error: any) {
             console.error('Error syncing all data:', error);
-            toast.error('Error al sincronizar datos');
+            toast.error('Error al sincronizar datos: ' + (error.message || 'Error desconocido'));
         } finally {
             isSyncing.current = false;
         }

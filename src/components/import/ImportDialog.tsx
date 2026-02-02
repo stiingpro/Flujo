@@ -95,16 +95,18 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
         setIsProcessing(true);
 
         try {
-            // Always perform local import (Supabase sync can be added later)
-            // Create category map and transactions
+            const userId = user?.id || 'anonymous';
+
+            // Create category map and track new categories
             const categoryMap = new Map<string, string>();
-            const categories = Array.from(parseResult.categories);
+            const categoryNames = Array.from(parseResult.categories);
+            const newCategories: typeof existingCategories = [];
 
             // Get existing category names to avoid duplicates
             const existingCategoryNames = new Set(existingCategories.map(c => c.name.toUpperCase()));
 
             // Generate IDs for categories (only add if not exists)
-            categories.forEach((name, index) => {
+            categoryNames.forEach((name, index) => {
                 // Check if category already exists
                 const existingCat = existingCategories.find(c => c.name.toUpperCase() === name.toUpperCase());
                 if (existingCat) {
@@ -117,20 +119,22 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
                     const matchingTx = parseResult.transactions.find((t) => t.categoryName === name);
                     const type = matchingTx?.type || 'expense';
 
-                    addCategory({
+                    const newCat = {
                         id,
                         name,
                         type,
-                        level: 'empresa', // Default to empresa for imported categories
+                        level: 'empresa' as const, // Default to empresa for imported categories
                         is_fixed: ['ARRIENDO', 'LUZ', 'AGUA', 'GAS', 'INTERNET', 'CELULAR'].includes(name.toUpperCase()),
                         created_at: new Date().toISOString(),
-                        user_id: 'demo-user',
-                    });
+                        user_id: userId,
+                    };
+
+                    addCategory(newCat);
+                    newCategories.push(newCat);
                 }
             });
 
             // Convert transactions to store format
-            const userId = user?.id || 'anonymous';
             const newTransactions = parseResult.transactions.map((t, index) => ({
                 id: `tx-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 date: t.date.toISOString().split('T')[0],
@@ -147,10 +151,12 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
             }));
 
             // Append new transactions to existing ones instead of replacing
-            setTransactions([...existingTransactions, ...newTransactions]);
+            const allTransactions = [...existingTransactions, ...newTransactions];
+            const allCategories = [...existingCategories, ...newCategories];
+            setTransactions(allTransactions);
 
-            // Sync to Supabase for cross-device access
-            await syncAllToSupabase();
+            // Sync to Supabase for cross-device access - pass data directly
+            await syncAllToSupabase(allTransactions, allCategories);
 
             toast.success(`¡Importación exitosa! ${newTransactions.length} transacciones importadas.`);
             setOpen(false);
