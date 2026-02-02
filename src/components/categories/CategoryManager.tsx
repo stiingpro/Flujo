@@ -129,10 +129,6 @@ export function CategoryManager() {
         addCategory(category);
         syncCategory(category); // Sync to Supabase
 
-        toast.success('Categoría creada', {
-            description: `"${category.name}" agregada a ${newCategory.level === 'empresa' ? 'Empresa' : 'Personal'}.`,
-        });
-
         setNewCategory({ name: '', type: 'expense', level: 'empresa', sublevel: 'otros' });
     };
 
@@ -154,7 +150,6 @@ export function CategoryManager() {
         const updatedCategoryFull = { ...editingCategory, ...updates };
         syncCategory(updatedCategoryFull);
 
-        toast.success('Categoría actualizada');
         setIsEditOpen(false);
         setEditingCategory(null);
     };
@@ -168,9 +163,6 @@ export function CategoryManager() {
             newSet.delete(category.id);
             setSelectedIds(newSet);
         }
-        toast.success('Categoría eliminada', {
-            description: `"${category.name}" fue removida.`,
-        });
     };
 
     // Bulk Actions
@@ -188,7 +180,6 @@ export function CategoryManager() {
                 syncCategory({ ...category, ...updates }); // Sync to Supabase
             }
         });
-        toast.success(`${selectedIds.size} categorías actualizadas`);
         setSelectedIds(new Set());
     };
 
@@ -198,7 +189,6 @@ export function CategoryManager() {
                 deleteCategory(id);
                 removeCategory(id); // Remove from Supabase
             });
-            toast.success(`${selectedIds.size} categorías eliminadas`);
             setSelectedIds(new Set());
         }
     };

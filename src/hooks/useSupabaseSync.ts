@@ -157,7 +157,7 @@ export function useSupabaseSync() {
             await bulkUpsertCategories(categoriesWithUserId);
             await bulkUpsertTransactions(transactionsWithUserId);
 
-            toast.success('Datos sincronizados correctamente');
+            console.log('[Sync] Datos sincronizados correctamente');
         } catch (error: any) {
             console.error('[Sync] Error syncing all data:', error);
             toast.error('Error al sincronizar datos: ' + (error.message || 'Error desconocido'));

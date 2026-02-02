@@ -129,8 +129,6 @@ export function TransactionForm() {
             syncCategory(newCat); // Sync to Supabase
             categoryId = newCat.id;
             categoryRef = newCat;
-
-            toast.success(`Categoría "${newCategoryName}" creada`);
         } else {
             categoryRef = categories.find(c => c.id === formData.category_id);
         }
@@ -175,10 +173,6 @@ export function TransactionForm() {
                 addTransaction(transaction);
                 syncTransaction(transaction); // Sync to Supabase
             }
-
-            toast.success('Cuotas agregadas', {
-                description: `${formData.totalInstallments} cuotas de $${installmentAmount.toLocaleString()} registradas.`,
-            });
         } else {
             // Single transaction
             const userId = user?.id || 'anonymous';
@@ -200,9 +194,6 @@ export function TransactionForm() {
 
             addTransaction(newTransaction);
             syncTransaction(newTransaction); // Sync to Supabase
-            toast.success('Movimiento agregado', {
-                description: `${formData.type === 'income' ? 'Ingreso' : 'Gasto'} de $${formData.amount.toLocaleString()} registrado.`,
-            });
         }
 
         // Reset form
