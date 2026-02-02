@@ -35,8 +35,14 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { Category, CategoryLevel, TransactionType, PersonalSublevel, SUBLEVEL_LABELS, SUBLEVEL_COLORS } from '@/types';
 import { toast } from 'sonner';
 
+import { useSupabaseSync } from '@/hooks/useSupabaseSync';
+import { useAuth } from '@/providers/AuthProvider';
+
 export function CategoryManager() {
     const { categories, addCategory, updateCategory, deleteCategory } = useFinanceStore();
+    const { syncCategory, removeCategory } = useSupabaseSync();
+    const { user } = useAuth();
+
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -50,6 +56,8 @@ export function CategoryManager() {
         level: 'empresa' as CategoryLevel,
         sublevel: 'otros' as PersonalSublevel,
     });
+
+    // ... (sorted and filtered categories logic can stay same)
 
     // Sorted and filtered categories
     const sortedCategories = useMemo(() => {
@@ -116,10 +124,12 @@ export function CategoryManager() {
             color: newCategory.level === 'personal' ? SUBLEVEL_COLORS[newCategory.sublevel] : undefined,
             is_fixed: false,
             created_at: new Date().toISOString(),
-            user_id: 'demo-user',
+            user_id: user?.id || 'demo-user',
         };
 
         addCategory(category);
+        syncCategory(category); // Sync to Supabase
+
         toast.success('Categoría creada', {
             description: `"${category.name}" agregada a ${newCategory.level === 'empresa' ? 'Empresa' : 'Personal'}.`,
         });
@@ -130,14 +140,20 @@ export function CategoryManager() {
     const handleUpdateCategory = () => {
         if (!editingCategory) return;
 
-        updateCategory(editingCategory.id, {
+        const updates = {
             name: editingCategory.name,
             level: editingCategory.level,
             sublevel: editingCategory.level === 'personal' ? editingCategory.sublevel : undefined,
             color: editingCategory.level === 'personal' && editingCategory.sublevel
                 ? SUBLEVEL_COLORS[editingCategory.sublevel]
                 : undefined,
-        });
+        };
+
+        updateCategory(editingCategory.id, updates);
+
+        // Sync updated object to Supabase
+        const updatedCategoryFull = { ...editingCategory, ...updates };
+        syncCategory(updatedCategoryFull);
 
         toast.success('Categoría actualizada');
         setIsEditOpen(false);
@@ -146,6 +162,8 @@ export function CategoryManager() {
 
     const handleDeleteCategory = (category: Category) => {
         deleteCategory(category.id);
+        removeCategory(category.id); // Remove from Supabase
+
         if (selectedIds.has(category.id)) {
             const newSet = new Set(selectedIds);
             newSet.delete(category.id);
@@ -159,11 +177,17 @@ export function CategoryManager() {
     // Bulk Actions
     const handleBulkUpdateLevel = (level: CategoryLevel, sublevel?: PersonalSublevel) => {
         selectedIds.forEach(id => {
-            updateCategory(id, {
-                level,
-                sublevel: level === 'personal' ? (sublevel || 'otros') : undefined,
-                color: level === 'personal' ? SUBLEVEL_COLORS[sublevel || 'otros'] : undefined
-            });
+            const category = categories.find(c => c.id === id);
+            if (category) {
+                const updates = {
+                    level,
+                    sublevel: level === 'personal' ? (sublevel || 'otros') : undefined,
+                    color: level === 'personal' ? SUBLEVEL_COLORS[sublevel || 'otros'] : undefined
+                };
+
+                updateCategory(id, updates);
+                syncCategory({ ...category, ...updates }); // Sync to Supabase
+            }
         });
         toast.success(`${selectedIds.size} categorías actualizadas`);
         setSelectedIds(new Set());
@@ -171,7 +195,10 @@ export function CategoryManager() {
 
     const handleBulkDelete = () => {
         if (confirm(`¿Estás seguro de eliminar ${selectedIds.size} categorías?`)) {
-            selectedIds.forEach(id => deleteCategory(id));
+            selectedIds.forEach(id => {
+                deleteCategory(id);
+                removeCategory(id); // Remove from Supabase
+            });
             toast.success(`${selectedIds.size} categorías eliminadas`);
             setSelectedIds(new Set());
         }
@@ -239,7 +266,7 @@ export function CategoryManager() {
                     </Button>
                 </DialogTrigger>
 
-                <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col">
+                <DialogContent className="sm:max-w-xl h-[85vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Gestionar Categorías</DialogTitle>
                         <DialogDescription>
@@ -420,7 +447,7 @@ export function CategoryManager() {
                         </div>
 
                         {/* Existing Categories with Scroll */}
-                        <ScrollArea className="flex-1 min-h-0 max-h-[40vh] pr-3">
+                        <ScrollArea className="flex-1 pr-3">
                             <div className="space-y-4 pb-4">
                                 <div>
                                     <div className="flex items-center justify-between mb-2 sticky top-0 bg-background py-1 z-10">
