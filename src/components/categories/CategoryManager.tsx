@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
@@ -446,8 +445,8 @@ export function CategoryManager() {
                             )}
                         </div>
 
-                        {/* Existing Categories with Scroll */}
-                        <ScrollArea className="flex-1 pr-3">
+                        {/* Existing Categories with Scroll - Using native div for reliable scrolling */}
+                        <div className="flex-1 overflow-y-auto min-h-0 pr-3">
                             <div className="space-y-4 pb-4">
                                 <div>
                                     <div className="flex items-center justify-between mb-2 sticky top-0 bg-background py-1 z-10">
@@ -499,7 +498,7 @@ export function CategoryManager() {
                                     </div>
                                 </div>
                             </div>
-                        </ScrollArea>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
