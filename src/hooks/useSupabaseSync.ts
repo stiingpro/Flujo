@@ -113,13 +113,18 @@ export function useSupabaseSync() {
 
     // Delete category from Supabase
     const removeCategory = useCallback(async (categoryId: string) => {
-        if (!user) return;
+        if (!user) {
+            console.error('[Sync] Cannot delete category: No user logged in');
+            return;
+        }
 
         try {
+            console.log('[Sync] Removing category from DB:', categoryId);
             await dbDeleteCategory(categoryId);
+            console.log('[Sync] Category removed from DB successfully');
         } catch (error: any) {
             console.error('[Sync] Error deleting category:', error);
-            toast.error('Error al eliminar categoría');
+            toast.error('Error al eliminar categoría: ' + (error.message || 'Error desconocido'));
         }
     }, [user]);
 

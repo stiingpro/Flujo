@@ -132,7 +132,7 @@ export function CategoryManager() {
         setNewCategory({ name: '', type: 'expense', level: 'empresa', sublevel: 'otros' });
     };
 
-    const handleUpdateCategory = () => {
+    const handleUpdateCategory = async () => {
         if (!editingCategory) return;
 
         const updates = {
@@ -148,15 +148,15 @@ export function CategoryManager() {
 
         // Sync updated object to Supabase
         const updatedCategoryFull = { ...editingCategory, ...updates };
-        syncCategory(updatedCategoryFull);
+        await syncCategory(updatedCategoryFull);
 
         setIsEditOpen(false);
         setEditingCategory(null);
     };
 
-    const handleDeleteCategory = (category: Category) => {
+    const handleDeleteCategory = async (category: Category) => {
         deleteCategory(category.id);
-        removeCategory(category.id); // Remove from Supabase
+        await removeCategory(category.id); // Remove from Supabase
 
         if (selectedIds.has(category.id)) {
             const newSet = new Set(selectedIds);
@@ -166,7 +166,9 @@ export function CategoryManager() {
     };
 
     // Bulk Actions
-    const handleBulkUpdateLevel = (level: CategoryLevel, sublevel?: PersonalSublevel) => {
+    const handleBulkUpdateLevel = async (level: CategoryLevel, sublevel?: PersonalSublevel) => {
+        const promises: Promise<void>[] = [];
+
         selectedIds.forEach(id => {
             const category = categories.find(c => c.id === id);
             if (category) {
@@ -177,18 +179,26 @@ export function CategoryManager() {
                 };
 
                 updateCategory(id, updates);
-                syncCategory({ ...category, ...updates }); // Sync to Supabase
+                // Queue sync to Supabase
+                promises.push(syncCategory({ ...category, ...updates }));
             }
         });
+
+        await Promise.all(promises);
         setSelectedIds(new Set());
     };
 
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         if (confirm(`¿Estás seguro de eliminar ${selectedIds.size} categorías?`)) {
+            const promises: Promise<void>[] = [];
+
             selectedIds.forEach(id => {
                 deleteCategory(id);
-                removeCategory(id); // Remove from Supabase
+                // Queue remove from Supabase
+                promises.push(removeCategory(id));
             });
+
+            await Promise.all(promises);
             setSelectedIds(new Set());
         }
     };
