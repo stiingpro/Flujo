@@ -38,12 +38,14 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { MainTab } from '@/types';
 import { YearCopyButton } from '@/components/dashboard/YearCopyButton';
 import { useAuth } from '@/providers/AuthProvider';
+import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
 
 export default function DashboardPage() {
   const { filters, setFilters, toggleProjectedMode, transactions, isDemoMode } = useFinanceStore();
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<MainTab>('gastos');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,7 +62,7 @@ export default function DashboardPage() {
   }
 
   if (!user) return null;
-  const [activeTab, setActiveTab] = useState<MainTab>('gastos');
+
 
   const currentYear = new Date().getFullYear();
   // Only show current year and future years (next 3 years)
@@ -97,6 +99,7 @@ export default function DashboardPage() {
               <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
+              <ChangePasswordDialog />
               <Button variant="ghost" size="icon" onClick={() => signOut()} title="Cerrar Sesión">
                 <LogOut className="h-5 w-5" />
               </Button>

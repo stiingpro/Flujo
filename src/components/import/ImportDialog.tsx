@@ -32,7 +32,7 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
     const [yearOverride, setYearOverride] = useState<string>('');
     const [isDragOver, setIsDragOver] = useState(false);
 
-    const { setTransactions, addCategory, isDemoMode } = useFinanceStore();
+    const { setTransactions, addCategory, transactions: existingTransactions, categories: existingCategories } = useFinanceStore();
 
     const handleFileSelect = useCallback(async (selectedFile: File) => {
         setFile(selectedFile);
@@ -91,14 +91,21 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
         setIsProcessing(true);
 
         try {
-            // In demo mode, just add to local store
-            if (isDemoMode) {
-                // Create category map and transactions
-                const categoryMap = new Map<string, string>();
-                const categories = Array.from(parseResult.categories);
+            // Always perform local import (Supabase sync can be added later)
+            // Create category map and transactions
+            const categoryMap = new Map<string, string>();
+            const categories = Array.from(parseResult.categories);
 
-                // Generate IDs for categories
-                categories.forEach((name, index) => {
+            // Get existing category names to avoid duplicates
+            const existingCategoryNames = new Set(existingCategories.map(c => c.name.toUpperCase()));
+
+            // Generate IDs for categories (only add if not exists)
+            categories.forEach((name, index) => {
+                // Check if category already exists
+                const existingCat = existingCategories.find(c => c.name.toUpperCase() === name.toUpperCase());
+                if (existingCat) {
+                    categoryMap.set(name, existingCat.id);
+                } else {
                     const id = `cat-${index}-${Date.now()}`;
                     categoryMap.set(name, id);
 
@@ -115,39 +122,37 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
                         created_at: new Date().toISOString(),
                         user_id: 'demo-user',
                     });
-                });
+                }
+            });
 
-                // Convert transactions to store format
-                const transactions = parseResult.transactions.map((t, index) => ({
-                    id: `tx-${index}-${Date.now()}`,
-                    date: t.date.toISOString().split('T')[0],
-                    amount: t.amount,
-                    description: t.categoryName,
-                    category_id: categoryMap.get(t.categoryName) || '',
-                    type: t.type,
-                    status: t.status,
-                    paymentStatus: (t.status === 'real' ? 'confirmed' : 'pending') as 'confirmed' | 'pending',
-                    origin: t.origin,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    user_id: 'demo-user',
-                }));
+            // Convert transactions to store format
+            const newTransactions = parseResult.transactions.map((t, index) => ({
+                id: `tx-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                date: t.date.toISOString().split('T')[0],
+                amount: t.amount,
+                description: t.categoryName,
+                category_id: categoryMap.get(t.categoryName) || '',
+                type: t.type,
+                status: t.status,
+                paymentStatus: (t.status === 'real' ? 'confirmed' : 'pending') as 'confirmed' | 'pending',
+                origin: t.origin,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                user_id: 'demo-user',
+            }));
 
-                setTransactions(transactions);
-                toast.success(`¡Importación exitosa! ${transactions.length} transacciones importadas.`);
-                setOpen(false);
-                onImportComplete?.();
-            } else {
-                // TODO: Implement Supabase import
-                toast.info('La importación a Supabase estará disponible próximamente');
-            }
+            // Append new transactions to existing ones instead of replacing
+            setTransactions([...existingTransactions, ...newTransactions]);
+            toast.success(`¡Importación exitosa! ${newTransactions.length} transacciones importadas.`);
+            setOpen(false);
+            onImportComplete?.();
         } catch (error) {
             toast.error('Error al importar los datos');
             console.error(error);
         } finally {
             setIsProcessing(false);
         }
-    }, [parseResult, isDemoMode, setTransactions, addCategory, onImportComplete]);
+    }, [parseResult, setTransactions, addCategory, onImportComplete, existingTransactions, existingCategories]);
 
     const handleReparse = useCallback(async () => {
         if (!file || !yearOverride) return;

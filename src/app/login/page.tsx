@@ -21,6 +21,10 @@ export default function LoginPage() {
     const [regEmail, setRegEmail] = useState('');
     const [regPassword, setRegPassword] = useState('');
 
+    // Forgot password state
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -64,6 +68,29 @@ export default function LoginPage() {
             }
         } catch (error: any) {
             toast.error(error.message || 'Error al registrarse');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                redirectTo: `${window.location.origin}/login`,
+            });
+
+            if (error) throw error;
+
+            toast.success('Email enviado', {
+                description: 'Revisa tu correo para restablecer tu contraseña.'
+            });
+            setShowForgotPassword(false);
+            setResetEmail('');
+        } catch (error: any) {
+            toast.error(error.message || 'Error al enviar email');
         } finally {
             setIsLoading(false);
         }
@@ -114,6 +141,13 @@ export default function LoginPage() {
                                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     Iniciar Sesión
                                 </Button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotPassword(true)}
+                                    className="w-full text-sm text-muted-foreground hover:text-primary transition-colors pt-2"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </button>
                             </form>
                         </TabsContent>
 
@@ -153,6 +187,50 @@ export default function LoginPage() {
                     </Tabs>
                 </CardContent>
             </Card>
+
+            {/* Forgot Password Modal */}
+            {showForgotPassword && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle>Restablecer Contraseña</CardTitle>
+                            <CardDescription>
+                                Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleForgotPassword} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="reset-email">Email</Label>
+                                    <Input
+                                        id="reset-email"
+                                        type="email"
+                                        placeholder="tu@email.com"
+                                        required
+                                        value={resetEmail}
+                                        onChange={(e) => setResetEmail(e.target.value)}
+                                        className="bg-white"
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => setShowForgotPassword(false)}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button type="submit" className="flex-1" disabled={isLoading}>
+                                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        Enviar
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }
