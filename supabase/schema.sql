@@ -1,14 +1,14 @@
 -- FlujoGlobal Database Schema for Supabase
 -- Run this in the Supabase SQL Editor
 
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
-
 -- Categories table
 CREATE TABLE IF NOT EXISTS categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL,
+  id TEXT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
   type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
+  level VARCHAR(20) DEFAULT 'empresa' CHECK (level IN ('personal', 'empresa')),
+  sublevel VARCHAR(20),
+  color VARCHAR(10),
   is_fixed BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -19,14 +19,16 @@ CREATE TABLE IF NOT EXISTS categories (
 
 -- Transactions table
 CREATE TABLE IF NOT EXISTS transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id TEXT PRIMARY KEY,
   date DATE NOT NULL,
   amount DECIMAL(15,2) NOT NULL,
   description TEXT,
-  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  category_id TEXT,
   type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
   status VARCHAR(10) NOT NULL CHECK (status IN ('real', 'projected')) DEFAULT 'projected',
+  "paymentStatus" VARCHAR(20) DEFAULT 'pending' CHECK ("paymentStatus" IN ('confirmed', 'pending')),
   origin VARCHAR(10) NOT NULL CHECK (origin IN ('business', 'personal')) DEFAULT 'business',
+  installment JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE
@@ -64,42 +66,35 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 -- Categories policies
+DROP POLICY IF EXISTS "Users can view own categories" ON categories;
 CREATE POLICY "Users can view own categories" ON categories
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own categories" ON categories;
 CREATE POLICY "Users can insert own categories" ON categories
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own categories" ON categories;
 CREATE POLICY "Users can update own categories" ON categories
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own categories" ON categories;
 CREATE POLICY "Users can delete own categories" ON categories
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Transactions policies
+DROP POLICY IF EXISTS "Users can view own transactions" ON transactions;
 CREATE POLICY "Users can view own transactions" ON transactions
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own transactions" ON transactions;
 CREATE POLICY "Users can insert own transactions" ON transactions
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own transactions" ON transactions;
 CREATE POLICY "Users can update own transactions" ON transactions
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own transactions" ON transactions;
 CREATE POLICY "Users can delete own transactions" ON transactions
     FOR DELETE USING (auth.uid() = user_id);
-
--- Default categories (run after first user signs up, replacing user_id)
--- These are common expense categories detected from the Excel
-/*
-INSERT INTO categories (name, type, is_fixed, user_id) VALUES
-  ('ARRIENDO', 'expense', true, 'YOUR_USER_ID'),
-  ('CELULAR', 'expense', true, 'YOUR_USER_ID'),
-  ('LUZ', 'expense', true, 'YOUR_USER_ID'),
-  ('AGUA', 'expense', true, 'YOUR_USER_ID'),
-  ('GAS', 'expense', true, 'YOUR_USER_ID'),
-  ('INTERNET', 'expense', true, 'YOUR_USER_ID'),
-  ('SUPERMERCADO', 'expense', false, 'YOUR_USER_ID'),
-  ('FERIA', 'expense', false, 'YOUR_USER_ID'),
-  ('VARIOS', 'expense', false, 'YOUR_USER_ID');
-*/

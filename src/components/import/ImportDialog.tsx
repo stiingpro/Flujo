@@ -18,6 +18,8 @@ import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react
 import { parseExcelFile, extractYearFromFilename } from '@/lib/excel-parser';
 import { ExcelParseResult } from '@/types';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useAuth } from '@/providers/AuthProvider';
+import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 import { toast } from 'sonner';
 
 interface ImportDialogProps {
@@ -33,6 +35,8 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
     const [isDragOver, setIsDragOver] = useState(false);
 
     const { setTransactions, addCategory, transactions: existingTransactions, categories: existingCategories } = useFinanceStore();
+    const { user } = useAuth();
+    const { syncAllToSupabase } = useSupabaseSync();
 
     const handleFileSelect = useCallback(async (selectedFile: File) => {
         setFile(selectedFile);
@@ -126,6 +130,7 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
             });
 
             // Convert transactions to store format
+            const userId = user?.id || 'anonymous';
             const newTransactions = parseResult.transactions.map((t, index) => ({
                 id: `tx-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 date: t.date.toISOString().split('T')[0],
@@ -138,11 +143,15 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
                 origin: t.origin,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                user_id: 'demo-user',
+                user_id: userId,
             }));
 
             // Append new transactions to existing ones instead of replacing
             setTransactions([...existingTransactions, ...newTransactions]);
+
+            // Sync to Supabase for cross-device access
+            await syncAllToSupabase();
+
             toast.success(`¡Importación exitosa! ${newTransactions.length} transacciones importadas.`);
             setOpen(false);
             onImportComplete?.();
@@ -152,7 +161,7 @@ export function ImportDialog({ onImportComplete }: ImportDialogProps) {
         } finally {
             setIsProcessing(false);
         }
-    }, [parseResult, setTransactions, addCategory, onImportComplete, existingTransactions, existingCategories]);
+    }, [parseResult, setTransactions, addCategory, onImportComplete, existingTransactions, existingCategories, user, syncAllToSupabase]);
 
     const handleReparse = useCallback(async () => {
         if (!file || !yearOverride) return;

@@ -39,13 +39,17 @@ import { MainTab } from '@/types';
 import { YearCopyButton } from '@/components/dashboard/YearCopyButton';
 import { useAuth } from '@/providers/AuthProvider';
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
+import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 
 export default function DashboardPage() {
-  const { filters, setFilters, toggleProjectedMode, transactions, isDemoMode } = useFinanceStore();
+  const { filters, setFilters, toggleProjectedMode, transactions, isLoading } = useFinanceStore();
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<MainTab>('gastos');
+
+  // Supabase sync - loads data on mount
+  useSupabaseSync();
 
   useEffect(() => {
     if (!loading && !user) {

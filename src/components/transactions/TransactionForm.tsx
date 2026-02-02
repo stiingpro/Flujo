@@ -26,6 +26,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, User, Building2, CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useAuth } from '@/providers/AuthProvider';
+import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 import {
     TransactionType,
     TransactionStatus,
@@ -45,6 +47,8 @@ type CategoryMode = 'existing' | 'new';
 export function TransactionForm() {
     const [open, setOpen] = useState(false);
     const { addTransaction, addCategory, categories } = useFinanceStore();
+    const { user } = useAuth();
+    const { syncTransaction, syncCategory } = useSupabaseSync();
 
     const [formData, setFormData] = useState<TransactionFormData>({
         date: new Date().toISOString().split('T')[0],
@@ -108,6 +112,7 @@ export function TransactionForm() {
             }
 
             // Create new category with sublevel if personal
+            const userId = user?.id || 'anonymous';
             const newCat: Category = {
                 id: `cat-${Date.now()}`,
                 name: newCategoryName.trim(),
@@ -117,10 +122,11 @@ export function TransactionForm() {
                 color: newCategoryLevel === 'personal' ? SUBLEVEL_COLORS[newCategorySublevel] : undefined,
                 is_fixed: false,
                 created_at: new Date().toISOString(),
-                user_id: 'demo-user',
+                user_id: userId,
             };
 
             addCategory(newCat);
+            syncCategory(newCat); // Sync to Supabase
             categoryId = newCat.id;
             categoryRef = newCat;
 
@@ -136,6 +142,7 @@ export function TransactionForm() {
             const installmentAmount = formData.isEqualInstallments
                 ? formData.amount / formData.totalInstallments
                 : formData.amount;
+            const userId = user?.id || 'anonymous';
 
             for (let i = 0; i < formData.totalInstallments; i++) {
                 const installmentDate = new Date(baseDate);
@@ -161,11 +168,12 @@ export function TransactionForm() {
                     },
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
-                    user_id: 'demo-user',
+                    user_id: userId,
                     category: categoryRef,
                 };
 
                 addTransaction(transaction);
+                syncTransaction(transaction); // Sync to Supabase
             }
 
             toast.success('Cuotas agregadas', {
@@ -173,6 +181,7 @@ export function TransactionForm() {
             });
         } else {
             // Single transaction
+            const userId = user?.id || 'anonymous';
             const newTransaction = {
                 id: `tx-${Date.now()}`,
                 date: formData.date,
@@ -185,11 +194,12 @@ export function TransactionForm() {
                 origin: formData.origin,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                user_id: 'demo-user',
+                user_id: userId,
                 category: categoryRef,
             };
 
             addTransaction(newTransaction);
+            syncTransaction(newTransaction); // Sync to Supabase
             toast.success('Movimiento agregado', {
                 description: `${formData.type === 'income' ? 'Ingreso' : 'Gasto'} de $${formData.amount.toLocaleString()} registrado.`,
             });
