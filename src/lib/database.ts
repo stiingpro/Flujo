@@ -6,6 +6,8 @@ import { Transaction, Category } from '@/types';
 // ============ CATEGORIES ============
 
 export async function fetchCategories(userId: string): Promise<Category[]> {
+    console.log('[DB] Fetching categories for user:', userId);
+
     const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -13,10 +15,11 @@ export async function fetchCategories(userId: string): Promise<Category[]> {
         .order('name');
 
     if (error) {
-        console.error('Error fetching categories:', error);
+        console.error('[DB] Error fetching categories:', error);
         throw error;
     }
 
+    console.log('[DB] Fetched categories:', data?.length || 0);
     return data || [];
 }
 
@@ -73,6 +76,8 @@ export async function bulkUpsertCategories(categories: Category[]): Promise<void
 // ============ TRANSACTIONS ============
 
 export async function fetchTransactions(userId: string): Promise<Transaction[]> {
+    console.log('[DB] Fetching transactions for user:', userId);
+
     const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -80,10 +85,11 @@ export async function fetchTransactions(userId: string): Promise<Transaction[]> 
         .order('date', { ascending: false });
 
     if (error) {
-        console.error('Error fetching transactions:', error);
+        console.error('[DB] Error fetching transactions:', error);
         throw error;
     }
 
+    console.log('[DB] Fetched transactions:', data?.length || 0);
     return data || [];
 }
 

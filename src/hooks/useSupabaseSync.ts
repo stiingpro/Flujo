@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import {
@@ -26,51 +26,75 @@ export function useSupabaseSync() {
         setError,
     } = useFinanceStore();
 
-    const isInitialLoadDone = useRef(false);
-    const isSyncing = useRef(false);
+    // Track if we've loaded data for the current user
+    const [loadedForUserId, setLoadedForUserId] = useState<string | null>(null);
+    const [isSyncing, setIsSyncing] = useState(false);
 
-    // Load data from Supabase on initial mount
+    // Load data from Supabase on initial mount or when user changes
     const loadFromSupabase = useCallback(async () => {
-        if (!user || isInitialLoadDone.current || isSyncing.current) return;
+        if (!user) {
+            console.log('[Sync] No user, skipping load');
+            return;
+        }
 
-        isSyncing.current = true;
+        console.log('[Sync] Loading data for user:', user.id);
         setLoading(true);
 
         try {
             const data = await syncAllData(user.id);
+            console.log('[Sync] Loaded from Supabase:', {
+                categories: data.categories.length,
+                transactions: data.transactions.length
+            });
+
             setCategories(data.categories);
             setTransactions(data.transactions);
-            isInitialLoadDone.current = true;
+            setLoadedForUserId(user.id);
+
+            if (data.transactions.length > 0 || data.categories.length > 0) {
+                console.log('[Sync] Data loaded successfully');
+            } else {
+                console.log('[Sync] No existing data found in Supabase');
+            }
         } catch (error: any) {
-            console.error('Error loading data from Supabase:', error);
+            console.error('[Sync] Error loading data from Supabase:', error);
             setError(error.message || 'Error al cargar datos');
-            // Don't show error toast on initial load - might just be empty database
+            toast.error('Error al cargar datos: ' + (error.message || 'Error desconocido'));
         } finally {
             setLoading(false);
-            isSyncing.current = false;
         }
     }, [user, setTransactions, setCategories, setLoading, setError]);
 
     // Sync a single transaction to Supabase
     const syncTransaction = useCallback(async (transaction: Transaction) => {
-        if (!user) return;
+        if (!user) {
+            console.log('[Sync] No user, skipping transaction sync');
+            return;
+        }
 
         try {
+            console.log('[Sync] Syncing single transaction:', transaction.id);
             await upsertTransaction({ ...transaction, user_id: user.id });
+            console.log('[Sync] Transaction synced successfully');
         } catch (error: any) {
-            console.error('Error syncing transaction:', error);
+            console.error('[Sync] Error syncing transaction:', error);
             toast.error('Error al sincronizar transacción');
         }
     }, [user]);
 
     // Sync a single category to Supabase
     const syncCategory = useCallback(async (category: Category) => {
-        if (!user) return;
+        if (!user) {
+            console.log('[Sync] No user, skipping category sync');
+            return;
+        }
 
         try {
+            console.log('[Sync] Syncing single category:', category.id);
             await upsertCategory({ ...category, user_id: user.id });
+            console.log('[Sync] Category synced successfully');
         } catch (error: any) {
-            console.error('Error syncing category:', error);
+            console.error('[Sync] Error syncing category:', error);
             toast.error('Error al sincronizar categoría');
         }
     }, [user]);
@@ -82,7 +106,7 @@ export function useSupabaseSync() {
         try {
             await dbDeleteTransaction(transactionId);
         } catch (error: any) {
-            console.error('Error deleting transaction:', error);
+            console.error('[Sync] Error deleting transaction:', error);
             toast.error('Error al eliminar transacción');
         }
     }, [user]);
@@ -94,7 +118,7 @@ export function useSupabaseSync() {
         try {
             await dbDeleteCategory(categoryId);
         } catch (error: any) {
-            console.error('Error deleting category:', error);
+            console.error('[Sync] Error deleting category:', error);
             toast.error('Error al eliminar categoría');
         }
     }, [user]);
@@ -102,9 +126,17 @@ export function useSupabaseSync() {
     // Sync all current data to Supabase (useful after import)
     // Pass newTransactions and newCategories directly to avoid stale closure data
     const syncAllToSupabase = useCallback(async (newTransactions?: Transaction[], newCategories?: Category[]) => {
-        if (!user || isSyncing.current) return;
+        if (!user) {
+            console.log('[Sync] No user, skipping sync all');
+            return;
+        }
 
-        isSyncing.current = true;
+        if (isSyncing) {
+            console.log('[Sync] Already syncing, skipping');
+            return;
+        }
+
+        setIsSyncing(true);
 
         try {
             // Use passed data or fall back to store data
@@ -115,33 +147,39 @@ export function useSupabaseSync() {
             const categoriesWithUserId = categoriesToSync.map(c => ({ ...c, user_id: user.id }));
             const transactionsWithUserId = transactionsToSync.map(t => ({ ...t, user_id: user.id }));
 
-            console.log('Syncing to Supabase:', { categories: categoriesWithUserId.length, transactions: transactionsWithUserId.length });
+            console.log('[Sync] Syncing to Supabase:', {
+                categories: categoriesWithUserId.length,
+                transactions: transactionsWithUserId.length,
+                userId: user.id
+            });
 
-            await Promise.all([
-                bulkUpsertCategories(categoriesWithUserId),
-                bulkUpsertTransactions(transactionsWithUserId),
-            ]);
+            // Sync categories first (transactions may depend on them)
+            await bulkUpsertCategories(categoriesWithUserId);
+            await bulkUpsertTransactions(transactionsWithUserId);
 
-            toast.success('Datos sincronizados');
+            toast.success('Datos sincronizados correctamente');
         } catch (error: any) {
-            console.error('Error syncing all data:', error);
+            console.error('[Sync] Error syncing all data:', error);
             toast.error('Error al sincronizar datos: ' + (error.message || 'Error desconocido'));
         } finally {
-            isSyncing.current = false;
+            setIsSyncing(false);
         }
-    }, [user, transactions, categories]);
+    }, [user, transactions, categories, isSyncing]);
 
-    // Effect to load data when user logs in
+    // Effect to load data when user logs in or changes
     useEffect(() => {
-        if (user && !isInitialLoadDone.current) {
+        // Only load if we have a user and haven't loaded for this user yet
+        if (user && loadedForUserId !== user.id) {
+            console.log('[Sync] User changed or new login, loading data...');
             loadFromSupabase();
         }
 
-        // Reset when user logs out
-        if (!user) {
-            isInitialLoadDone.current = false;
+        // Reset loaded state when user logs out
+        if (!user && loadedForUserId) {
+            console.log('[Sync] User logged out, resetting state');
+            setLoadedForUserId(null);
         }
-    }, [user, loadFromSupabase]);
+    }, [user, loadedForUserId, loadFromSupabase]);
 
     return {
         loadFromSupabase,
@@ -150,6 +188,7 @@ export function useSupabaseSync() {
         removeTransaction,
         removeCategory,
         syncAllToSupabase,
-        isInitialLoadDone: isInitialLoadDone.current,
+        isLoaded: loadedForUserId === user?.id,
+        isSyncing,
     };
 }
