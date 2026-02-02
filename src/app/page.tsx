@@ -108,20 +108,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Demo Mode Banner */}
-      {isDemoMode && (
-        <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <p className="text-sm text-amber-800 flex items-center gap-2">
-              <Badge variant="outline" className="text-amber-700 border-amber-300">
-                Modo Demo
-              </Badge>
-              Configura Supabase para sincronizar tus datos. Los datos se guardan localmente.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Filters Bar */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
