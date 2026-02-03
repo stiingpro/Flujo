@@ -179,14 +179,7 @@ export default function DashboardPage() {
       </div >
 
       {/* Main Content with Tabs */}
-      < main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" >
-
-        {/* Company Branding Section */}
-        < div className="mb-8 flex justify-center" >
-          <ProfileSettingsDialog
-            customTrigger={<div className="w-full max-w-md"><CompanyBranding /></div>}
-          />
-        </div >
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTab)}>
           <div className="flex items-center justify-between mb-6">
             <TabsList className="h-12">
