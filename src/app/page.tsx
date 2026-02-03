@@ -151,24 +151,9 @@ export default function DashboardPage() {
               <Separator orientation="vertical" className="h-6" />
 
               <div className="flex items-center gap-2">
-                <Label htmlFor="origin" className="text-sm text-muted-foreground whitespace-nowrap">
-                  Origen:
-                </Label>
-                <Select
-                  value={filters.origin}
-                  onValueChange={(value: 'all' | 'business' | 'personal') =>
-                    setFilters({ origin: value })
-                  }
-                >
-                  <SelectTrigger id="origin" className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="business">Empresa</SelectItem>
-                    <SelectItem value="personal">Personal</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ProfileSettingsDialog
+                  customTrigger={<CompanyBranding />}
+                />
               </div>
             </div>
 
