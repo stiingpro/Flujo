@@ -16,7 +16,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FlujoGlobal | Gestión de Flujo de Caja",
+  title: "FlujoExpert | Gestión de Flujo de Caja",
   description: "Aplicación para la gestión unificada de flujo de caja empresarial y personal. Control diario, proyecciones y análisis financiero.",
   keywords: ["flujo de caja", "finanzas", "contabilidad", "gestión financiera", "P&L"],
   authors: [{ name: "FlujoGlobal" }],

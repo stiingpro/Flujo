@@ -19,7 +19,11 @@ import { Settings, Loader2, Upload, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
-export function ProfileSettingsDialog() {
+interface ProfileSettingsDialogProps {
+    customTrigger?: React.ReactNode;
+}
+
+export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogProps) {
     const { user } = useAuth();
     const { profile, setProfile, updateProfile } = useFinanceStore();
     const [isOpen, setIsOpen] = useState(false);
@@ -126,9 +130,13 @@ export function ProfileSettingsDialog() {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" title="Configuración de Perfil">
-                    <Settings className="h-5 w-5" />
-                </Button>
+                {customTrigger ? (
+                    customTrigger
+                ) : (
+                    <Button variant="ghost" size="icon" title="Configuración de Perfil">
+                        <Settings className="h-5 w-5" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
