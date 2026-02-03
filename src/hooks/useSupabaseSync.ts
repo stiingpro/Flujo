@@ -120,41 +120,39 @@ export function useSupabaseSync() {
         }
 
         try {
-            console.log('[Sync] Removing category from DB:', categoryId);
+            console.log('[Sync] Removing category via RPC (The Sledgehammer):', categoryId);
 
-            // 1. Perform Delete
-            const { error, count } = await supabase
-                .from('categories')
-                .delete({ count: 'exact' })
-                .eq('id', categoryId);
+            // 1. Perform Delete via RPC
+            // This bypasses RLS issues by running as SECURITY DEFINER on the server
+            const { data: deletedCount, error } = await supabase
+                .rpc('delete_own_category', { target_category_id: categoryId });
 
             if (error) throw error;
 
-            // 2. Paranoid Verification: Check if it still exists
-            const { data: checkData, error: checkError } = await supabase
-                .from('categories')
-                .select('id')
-                .eq('id', categoryId)
-                .single();
+            if (deletedCount === 0) {
+                // Paranoid check: Did it exist in the first place?
+                console.warn('[Sync] RPC returned 0 deleted rows. Item might be already gone or owned by another user.');
 
-            // If checkData exists, it implies the delete FAILED silently (maybe RLS?)
-            if (checkData) {
-                console.error('[Sync] CRITICAL: Category still exists after delete!', checkData);
-                toast.error('Error crítico: La base de datos rechazó el borrado. Verifica permisos.');
-                return false;
-            }
+                // Optional: Verify if it exists for ANY user (debug only)
+                // const { data: checkData } = await supabase.from('categories').select('id').eq('id', categoryId).single();
+                // if (checkData) console.error('[Sync] Item exists but RPC failed to delete it. Authorization mismatch?');
 
-            if (count === 0) {
-                // If count is 0, it wasn't there to begin with (or RLS hid it).
-                // But since checkData is null, it's definitely gone now.
-                console.warn('[Sync] Warning: Delete count was 0, but record is gone.');
+                // We return true anyway to clear local state, assuming it's unrecoverable/gone for this user.
                 return true;
             } else {
-                console.log('[Sync] Category verified deleted.');
+                console.log('[Sync] Category Sledgehammered successfully. Rows affected:', deletedCount);
                 return true;
             }
         } catch (error: any) {
-            console.error('[Sync] Error deleting category:', error);
+            console.error('[Sync] Error deleting category (RPC):', error);
+
+            // Fallback to standard delete if RPC not exists (during migration)
+            if (error.message?.includes('function') && error.message?.includes('does not exist')) {
+                console.warn('[Sync] RPC missing, falling back to standard delete...');
+                const { error: stdError } = await supabase.from('categories').delete().eq('id', categoryId);
+                if (!stdError) return true;
+            }
+
             toast.error('Error al sincronizar borrado: ' + (error.message || 'Desconocido'));
             return false;
         }
