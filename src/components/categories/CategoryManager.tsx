@@ -39,7 +39,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 export function CategoryManager() {
     const { categories, addCategory, updateCategory, deleteCategory } = useFinanceStore();
-    const { syncCategory, removeCategory } = useSupabaseSync();
+    const { syncCategory, removeCategory, removeCategoryByName } = useSupabaseSync();
     const { user } = useAuth();
 
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -186,56 +186,31 @@ export function CategoryManager() {
     };
 
     const handleDeleteCategory = async (category: Category) => {
-        // PERFORANCE CHANGE & DUPLICATE FIX:
-        // Instead of just deleting this specific ID, we look for ALL categories with this name
-        // and delete them all. This cleans up invisible duplicates rooted in the DB.
+        // PERFORMANCE CHANGE & DUPLICATE FIX (RPC EDITION):
+        // We use the new RPC to delete ALL categories with this name on the server.
+        // This handles "Ghost" items that are not in the local store but are in the DB.
 
+        const success = await removeCategoryByName(category.name.trim());
+
+        if (!success) {
+            // Error handled in hook (toast)
+            return;
+        }
+
+        // We assume success means they are gone.
+        // The hook calls loadFromSupabase() automatically, which will refresh the list.
+        // But for immediate UI feedback, we can optimistically remove them.
         const normalizedName = category.name.trim().toUpperCase();
-
-        // Find all IDs that match this name (for the same user/type implicitly)
-        const idsToDelete = categories
+        const idsToRemove = categories
             .filter(c => c.name.trim().toUpperCase() === normalizedName)
             .map(c => c.id);
 
-        if (idsToDelete.length === 0) return; // Should not happen
+        idsToRemove.forEach(id => deleteCategory(id));
 
-        if (idsToDelete.length > 1) {
-            console.log(`[Aggressive Delete] Found ${idsToDelete.length} duplicates for "${category.name}". Deleting all.`);
-            toast.info(`Limpiando ${idsToDelete.length} elementos duplicados de "${category.name}"...`);
-        }
-
-        // Execute deletions in parallel
-        const promises = idsToDelete.map(id => removeCategory(id));
-        const results = await Promise.all(promises);
-
-        const allSuccess = results.every(r => r === true);
-
-        if (!allSuccess) {
-            toast.error('Error: Algunos elementos no se pudieron eliminar. Intenta recargar.');
-            // We could return here, but let's clear what we can locally
-        }
-
-        // Only remove visually if at least one succeeded (or all)
-        // Ideally we remove the ones that succeeded.
-        const successfullyDeletedIds = idsToDelete.filter((_, index) => results[index]);
-
-        successfullyDeletedIds.forEach(id => deleteCategory(id));
-
-        // Update selection if needed
+        // Update selection
         const newSet = new Set(selectedIds);
-        let selectionChanged = false;
-        successfullyDeletedIds.forEach(id => {
-            if (newSet.has(id)) {
-                newSet.delete(id);
-                selectionChanged = true;
-            }
-        });
-
-        if (selectionChanged) setSelectedIds(newSet);
-
-        if (idsToDelete.length > 1 && allSuccess) {
-            toast.success(`Se eliminaron ${idsToDelete.length} copias de "${category.name}" correctamente.`);
-        }
+        idsToRemove.forEach(id => newSet.delete(id));
+        setSelectedIds(newSet);
     };
 
     // Bulk Actions

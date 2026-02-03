@@ -112,7 +112,51 @@ export function useSupabaseSync() {
         }
     }, [user]);
 
-    // Delete category from Supabase
+    // Delete category by NAME (Aggressive RPC)
+    const removeCategoryByName = useCallback(async (name: string): Promise<boolean> => {
+        if (!user) return false;
+
+        try {
+            console.log('[Sync] Removing category by NAME via RPC:', name);
+
+            // RPC call to delete all with this name
+            // Requires 'delete_category_by_name' function in DB
+            const { data: deletedCount, error } = await supabase
+                .rpc('delete_category_by_name', { category_name: name });
+
+            if (error) {
+                // If RPC missing, try regular delete (best effort, though likely fails if RLS issue)
+                if (error.message?.includes('does not exist')) {
+                    console.warn('[Sync] RPC missing. Fallback not possible for name delete without ID.');
+                    toast.error('Error: Falta la función de base de datos. Ejecuta el script SQL.');
+                    return false;
+                }
+                throw error;
+            }
+
+            console.log('[Sync] Deleted count:', deletedCount);
+
+            if (deletedCount === 0) {
+                toast.warning(`No se encontraron categorías llamadas "${name}" en la base de datos.`);
+                // Check if it exists locally but not in DB?
+                return true; // Assume success (already gone)
+            } else {
+                if (deletedCount > 1) {
+                    toast.success(`Se eliminaron ${deletedCount} copias de "${name}".`);
+                }
+                return true;
+            }
+        } catch (error: any) {
+            console.error('[Sync] Error deleting by name:', error);
+            toast.error('Error al borrar: ' + error.message);
+            return false;
+        } finally {
+            // ALWAYS refresh source of truth
+            await loadFromSupabase();
+        }
+    }, [user, loadFromSupabase]);
+
+    // Delete category from Supabase (Legacy/ID based - kept for reference but UI likely uses Name now)
     const removeCategory = useCallback(async (categoryId: string): Promise<boolean> => {
         if (!user) {
             console.error('[Sync] Cannot delete category: No user logged in');
@@ -230,6 +274,7 @@ export function useSupabaseSync() {
         syncCategory,
         removeTransaction,
         removeCategory,
+        removeCategoryByName,
         syncAllToSupabase,
         isLoaded: loadedForUserId === user?.id,
         isSyncing,
