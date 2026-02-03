@@ -79,7 +79,7 @@ export function RevenueExpenseChart() {
                             strokeWidth={3}
                             dot={{ r: 4, strokeWidth: 2 }}
                         />
-                        <Area type="monotone" dataKey="Utilidad" fill="url(#colorUtility)" stroke="none" />
+                        <Area type="monotone" dataKey="Utilidad" fill="url(#colorUtility)" stroke="none" legendType="none" />
                     </ComposedChart>
                 </ResponsiveContainer>
             </CardContent>
