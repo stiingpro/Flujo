@@ -23,17 +23,17 @@ export function CompanyBranding() {
 
     if (profile?.logo_url) {
         return (
-            <div className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-transparent hover:border-gray-200 transition-all cursor-pointer group">
-                <div className="relative h-24 w-auto min-w-[150px] flex items-center justify-center">
+            <div className="flex items-center justify-center h-8 px-2 rounded-lg border border-transparent hover:border-gray-200 transition-all cursor-pointer group bg-white/50 hover:bg-white relative">
+                <div className="relative h-full w-auto min-w-[80px] flex items-center justify-center">
                     <Image
                         src={profile.logo_url}
                         alt="Logo Empresa"
-                        height={80}
-                        width={200}
-                        className="object-contain max-h-24 w-auto"
+                        height={20}
+                        width={80}
+                        className="object-contain max-h-6 w-auto"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/50 transition-opacity rounded-lg">
-                        <span className="text-sm font-medium text-gray-700 bg-white px-3 py-1 rounded shadow-sm">Editar Logo</span>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/80 transition-opacity rounded-lg">
+                        <span className="text-[10px] font-medium text-gray-700">Editar</span>
                     </div>
                 </div>
             </div>

@@ -111,6 +111,7 @@ export default function DashboardPage() {
               <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
+              <ProfileSettingsDialog />
               <ChangePasswordDialog />
               <Button variant="ghost" size="icon" onClick={() => signOut()} title="Cerrar Sesión">
                 <LogOut className="h-5 w-5" />
