@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,11 +101,27 @@ export default function LoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
             <Card className="w-full max-w-md shadow-lg">
-                <CardHeader className="text-center space-y-1">
-                    <CardTitle className="text-2xl font-bold tracking-tight">FlujoGlobal</CardTitle>
-                    <CardDescription>
-                        Ingresa para gestionar tus finanzas
-                    </CardDescription>
+                <CardHeader className="text-center space-y-4">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="flex items-center gap-3">
+                            <div className="relative h-16 w-16">
+                                <Image
+                                    src="/logo-new.png"
+                                    alt="Logo"
+                                    fill
+                                    className="object-contain"
+                                />
+                            </div>
+                            <div className="text-left">
+                                <h1 className="text-3xl font-bold bg-clip-text text-slate-800 tracking-tight uppercase">
+                                    FLUJOEXPERT
+                                </h1>
+                            </div>
+                        </div>
+                        <CardDescription className="text-base">
+                            Ingresa para gestionar tus finanzas
+                        </CardDescription>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="login" className="w-full">
