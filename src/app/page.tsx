@@ -193,97 +193,104 @@ export default function DashboardPage() {
 
     {/* Main Content with Tabs */ }
     < main className = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" >
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTab)}>
-        <div className="flex items-center justify-between mb-6">
-          <TabsList className="h-12">
-            <TabsTrigger value="gastos" className="h-10 px-6 gap-2">
-              <TrendingDown className="h-4 w-4 text-expense" />
-              Gastos
-            </TabsTrigger>
-            <TabsTrigger value="ingresos" className="h-10 px-6 gap-2">
-              <TrendingUp className="h-4 w-4 text-income" />
-              Ingresos
-            </TabsTrigger>
-            <TabsTrigger value="resumen" className="h-10 px-6 gap-2">
-              <Scale className="h-4 w-4 text-blue-600" />
-              Resumen
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="h-10 px-6 gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-          </TabsList>
 
-          <p className="text-sm text-muted-foreground">
-            {transactions.length > 0
-              ? `${transactions.length} movimientos registrados`
-              : 'Importa un archivo Excel para comenzar'}
-          </p>
+      {/* Company Branding Section */ }
+      < div className = "mb-8 flex justify-center" >
+        <ProfileSettingsDialog
+          customTrigger={<div className="w-full max-w-md"><CompanyBranding /></div>}
+        />
+        </div >
+    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTab)}>
+      <div className="flex items-center justify-between mb-6">
+        <TabsList className="h-12">
+          <TabsTrigger value="gastos" className="h-10 px-6 gap-2">
+            <TrendingDown className="h-4 w-4 text-expense" />
+            Gastos
+          </TabsTrigger>
+          <TabsTrigger value="ingresos" className="h-10 px-6 gap-2">
+            <TrendingUp className="h-4 w-4 text-income" />
+            Ingresos
+          </TabsTrigger>
+          <TabsTrigger value="resumen" className="h-10 px-6 gap-2">
+            <Scale className="h-4 w-4 text-blue-600" />
+            Resumen
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="h-10 px-6 gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+        </TabsList>
+
+        <p className="text-sm text-muted-foreground">
+          {transactions.length > 0
+            ? `${transactions.length} movimientos registrados`
+            : 'Importa un archivo Excel para comenzar'}
+        </p>
+      </div>
+
+      {/* Tab: Gastos */}
+      <TabsContent value="gastos" className="mt-0 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Gastos {filters.year}</h2>
+            <p className="text-sm text-muted-foreground">
+              Gestiona todos tus gastos por categoría
+            </p>
+          </div>
+        </div>
+        <PLTable filterType="expense" />
+      </TabsContent>
+
+      {/* Tab: Ingresos */}
+      <TabsContent value="ingresos" className="mt-0 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Ingresos {filters.year}</h2>
+            <p className="text-sm text-muted-foreground">
+              Gestiona todos tus ingresos por categoría
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Badge variant="outline" className="gap-1 bg-green-50 border-green-200 text-green-700">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              Pagado
+            </Badge>
+            <Badge variant="outline" className="gap-1 bg-amber-50 border-amber-200 text-amber-700">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Por Cobrar
+            </Badge>
+          </div>
+        </div>
+        <PLTable filterType="income" />
+      </TabsContent>
+
+      {/* Tab: Resumen */}
+      <TabsContent value="resumen" className="mt-0 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Resumen {filters.year}</h2>
+            <p className="text-sm text-muted-foreground">
+              Balance mensual de ingresos y gastos
+            </p>
+          </div>
+        </div>
+        <SummaryTable />
+      </TabsContent>
+
+      {/* Tab: Dashboard */}
+      <TabsContent value="dashboard" className="mt-0 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Dashboard {filters.year}</h2>
+            <p className="text-sm text-muted-foreground">
+              Visualización gráfica del flujo de caja
+            </p>
+          </div>
         </div>
 
-        {/* Tab: Gastos */}
-        <TabsContent value="gastos" className="mt-0 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Gastos {filters.year}</h2>
-              <p className="text-sm text-muted-foreground">
-                Gestiona todos tus gastos por categoría
-              </p>
-            </div>
-          </div>
-          <PLTable filterType="expense" />
-        </TabsContent>
-
-        {/* Tab: Ingresos */}
-        <TabsContent value="ingresos" className="mt-0 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Ingresos {filters.year}</h2>
-              <p className="text-sm text-muted-foreground">
-                Gestiona todos tus ingresos por categoría
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Badge variant="outline" className="gap-1 bg-green-50 border-green-200 text-green-700">
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                Pagado
-              </Badge>
-              <Badge variant="outline" className="gap-1 bg-amber-50 border-amber-200 text-amber-700">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                Por Cobrar
-              </Badge>
-            </div>
-          </div>
-          <PLTable filterType="income" />
-        </TabsContent>
-
-        {/* Tab: Resumen */}
-        <TabsContent value="resumen" className="mt-0 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Resumen {filters.year}</h2>
-              <p className="text-sm text-muted-foreground">
-                Balance mensual de ingresos y gastos
-              </p>
-            </div>
-          </div>
-          <SummaryTable />
-        </TabsContent>
-
-        {/* Tab: Dashboard */}
-        <TabsContent value="dashboard" className="mt-0 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Dashboard {filters.year}</h2>
-              <p className="text-sm text-muted-foreground">
-                Visualización gráfica del flujo de caja
-              </p>
-            </div>
-          </div>
-
-          <DashboardPro />
-        </TabsContent>
-      </Tabs>
+        <DashboardPro />
+      </TabsContent>
+    </Tabs>
       </main >
 
     {/* Footer */ }
