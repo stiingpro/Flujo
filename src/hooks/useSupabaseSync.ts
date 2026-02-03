@@ -142,7 +142,8 @@ export function useSupabaseSync() {
                 return true; // Assume success (already gone)
             } else {
                 if (deletedCount > 1) {
-                    toast.success(`Se eliminaron ${deletedCount} copias de "${name}".`);
+                    // toast.success(`Se eliminaron ${deletedCount} copias de "${name}".`);
+                    console.log(`[Sync] Se eliminaron ${deletedCount} copias de "${name}".`);
                 }
                 return true;
             }

@@ -18,6 +18,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { TransactionType, TransactionStatus, CategoryLevel, PersonalSublevel, MONTH_NAMES, SUBLEVEL_COLORS, SUBLEVEL_LABELS } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 
 interface PLTableProps {
     filterType?: TransactionType;
@@ -210,8 +211,10 @@ export function PLTable({ filterType }: PLTableProps) {
         [updateTransaction]
     );
 
+    const { removeCategoryByName } = useSupabaseSync();
+
     const handleDeleteCategory = useCallback(
-        (categoryName: string, txType: TransactionType) => {
+        async (categoryName: string, txType: TransactionType) => {
             const category = categories.find((c) => c.name === categoryName && c.type === txType);
 
             const toDelete = transactions.filter((t) => {
@@ -223,17 +226,20 @@ export function PLTable({ filterType }: PLTableProps) {
                 );
             });
 
+            // Delete transactions (Client side for now, should be server side ideally but DB cascade is missing)
             toDelete.forEach((t) => deleteTransaction(t.id));
 
             if (category) {
-                deleteCategory(category.id);
+                // Use RPC to delete category (and duplicates)
+                await removeCategoryByName(categoryName);
             }
 
-            toast.success('Categoría eliminada', {
-                description: `"${categoryName}" y sus ${toDelete.length} movimientos fueron eliminados.`,
-            });
+            // Silent success as requested
+            // toast.success('Categoría eliminada', {
+            //     description: `"${categoryName}" y sus ${toDelete.length} movimientos fueron eliminados.`,
+            // });
         },
-        [categories, transactions, filters.year, deleteTransaction, deleteCategory]
+        [categories, transactions, filters.year, deleteTransaction, removeCategoryByName]
     );
 
     const renderCategoryRow = (
