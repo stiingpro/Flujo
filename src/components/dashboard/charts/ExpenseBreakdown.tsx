@@ -87,11 +87,12 @@ export function ExpenseBreakdown() {
                         label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                             // Calculate label position
                             const RADIAN = Math.PI / 180;
+                            const mAngle = midAngle || 0;
                             const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                            const x = cx + radius * Math.cos(-mAngle * RADIAN);
+                            const y = cy + radius * Math.sin(-mAngle * RADIAN);
 
-                            return `${(percent * 100).toFixed(0)}%`;
+                            return `${((percent || 0) * 100).toFixed(0)}%`;
                         }}
                         labelLine={false}
                     >
