@@ -148,12 +148,12 @@ export function PLTable({ filterType }: PLTableProps) {
         return parseFloat(value.replace(/[^0-9.-]/g, '')) || 0;
     };
 
-    const { removeCategoryByName, updateTransactionAndSync, deleteTransactionAndSync } = useSupabaseSync();
+    const { removeCategoryByName, updateTransactionAndSync, deleteTransactionAndSync, addTransactionAndSync } = useSupabaseSync();
 
     const handleCellClick = useCallback(
         (categoryName: string, month: number, txType: TransactionType, currentValue: number) => {
             setEditingCell({ categoryName, month, type: txType });
-            setEditValue(currentValue.toString());
+            setEditValue(currentValue === 0 ? '' : currentValue.toString());
         },
         []
     );
@@ -163,6 +163,10 @@ export function PLTable({ filterType }: PLTableProps) {
 
         const newAmount = parseCurrency(editValue);
         const { categoryName, month, type: txType } = editingCell;
+
+        // Skip if empty or 0 (unless we want to allow 0 explicitly?)
+        // If user enters nothing/0 for a NEW entry, we usually do nothing.
+        // If user enters 0 for EXISTING entry, we might update it to 0.
 
         const transaction = transactions.find((t) => {
             const tDate = new Date(t.date);
@@ -177,23 +181,47 @@ export function PLTable({ filterType }: PLTableProps) {
         if (transaction) {
             // Update & Sync immediately
             await updateTransactionAndSync(transaction.id, { amount: newAmount });
-
-            const cellKey = `${categoryName}-${month}`;
-            setAnimatingCells((prev) => new Set(prev).add(cellKey));
-            setTimeout(() => {
-                setAnimatingCells((prev) => {
-                    const newSet = new Set(prev);
-                    newSet.delete(cellKey);
-                    return newSet;
-                });
-            }, 500);
-
             toast.success('Monto actualizado');
+        } else {
+            // CREATE NEW TRANSACTION
+            if (newAmount > 0) {
+                // Find Category ID
+                const category = categories.find(c => c.name === categoryName && c.type === txType);
+
+                // Construct Date (YYYY-MM-DD for the 1st of the month)
+                const dateStr = `${filters.year}-${month.toString().padStart(2, '0')}-01`;
+
+                const newTx = {
+                    id: crypto.randomUUID(), // Modern random ID
+                    date: dateStr,
+                    amount: newAmount,
+                    description: categoryName, // Fallback description
+                    category_id: category?.id, // Link to category
+                    type: txType,
+                    status: 'projected', // Default to projected? Or real? Let's say projected per default.
+                    origin: 'business', // Default origin?
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                } as any; // Type casting to bypass strict checks for now
+
+                await addTransactionAndSync(newTx);
+                toast.success('Nuevo movimiento creado');
+            }
         }
+
+        const cellKey = `${categoryName}-${month}`;
+        setAnimatingCells((prev) => new Set(prev).add(cellKey));
+        setTimeout(() => {
+            setAnimatingCells((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(cellKey);
+                return newSet;
+            });
+        }, 500);
 
         setEditingCell(null);
         setEditValue('');
-    }, [editingCell, editValue, transactions, filters.year, updateTransactionAndSync]);
+    }, [editingCell, editValue, transactions, filters.year, updateTransactionAndSync, addTransactionAndSync, categories]);
 
     const handleCancel = useCallback(() => {
         setEditingCell(null);
@@ -292,15 +320,43 @@ export function PLTable({ filterType }: PLTableProps) {
                     const cellKey = `${categoryName}-${month}`;
                     const isAnimating = animatingCells.has(cellKey);
 
+                    const shouldShow = filters.showProjected || cellData?.status === 'real';
+
+                    // Render Empty Cell (Enable Click)
                     if (!cellData) {
                         return (
-                            <TableCell key={month} className="text-center text-muted-foreground font-mono-numbers">
-                                -
+                            <TableCell
+                                key={month}
+                                className="text-right text-muted-foreground font-mono-numbers hover:bg-muted/50 cursor-pointer transition-colors"
+                                onClick={() => handleCellClick(categoryName, month, txType, 0)}
+                            >
+                                {isEditing ? (
+                                    <div className="flex items-center gap-1">
+                                        <Input
+                                            type="text"
+                                            value={editValue}
+                                            onChange={(e) => setEditValue(e.target.value)}
+                                            className="h-7 w-24 text-right font-mono-numbers"
+                                            autoFocus
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSave();
+                                                if (e.key === 'Escape') handleCancel();
+                                            }}
+                                        />
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleSave}>
+                                            <Check className="h-3 w-3" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleCancel}>
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <span className="opacity-30 hover:opacity-100">-</span>
+                                )}
                             </TableCell>
                         );
                     }
 
-                    const shouldShow = filters.showProjected || cellData.status === 'real';
                     if (!shouldShow && cellData.status === 'projected') {
                         return (
                             <TableCell key={month} className="text-center text-muted-foreground font-mono-numbers">

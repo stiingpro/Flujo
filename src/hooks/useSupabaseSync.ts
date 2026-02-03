@@ -269,6 +269,25 @@ export function useSupabaseSync() {
         }
     }, [user, loadedForUserId, loadFromSupabase, setCategories, setTransactions]);
 
+    // Helper: Add Transaction & Sync to DB
+    const addTransactionAndSync = useCallback(async (transaction: Transaction) => {
+        if (!user) return;
+
+        // 1. Optimistic Add (Store)
+        setTransactions([...transactions, transaction]);
+
+        try {
+            // 2. DB Insert
+            console.log('[Sync] Adding transaction to DB:', transaction.id);
+            await upsertTransaction({ ...transaction, user_id: user.id });
+        } catch (error) {
+            console.error('[Sync] Error adding transaction:', error);
+            toast.error('Error al crear movimiento.');
+            // Rollback optimistic update
+            setTransactions(transactions.filter(t => t.id !== transaction.id));
+        }
+    }, [user, transactions, setTransactions]);
+
     // Helper: Update Transaction & Sync to DB
     const updateTransactionAndSync = useCallback(async (id: string, updates: Partial<Transaction>) => {
         if (!user) return;
@@ -317,6 +336,7 @@ export function useSupabaseSync() {
         removeCategory,
         removeCategoryByName,
         syncAllToSupabase,
+        addTransactionAndSync, // Export new helper
         updateTransactionAndSync, // Export new helper
         deleteTransactionAndSync, // Export new helper
         isLoaded: loadedForUserId === user?.id,
