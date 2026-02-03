@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -108,6 +108,37 @@ export function CategoryManager() {
         }
     };
 
+    // --- DUPLICATE DETECTION --
+    useEffect(() => {
+        const nameMap = new Map<string, string[]>();
+        categories.forEach(c => {
+            const normalized = c.name.trim().toUpperCase();
+            const ids = nameMap.get(normalized) || [];
+            ids.push(c.id);
+            nameMap.set(normalized, ids);
+        });
+
+        const duplicates: string[] = [];
+        nameMap.forEach((ids, name) => {
+            if (ids.length > 1) {
+                duplicates.push(`${name} (${ids.length})`);
+            }
+        });
+
+        if (duplicates.length > 0) {
+            console.warn('Duplicates detected:', duplicates);
+            toast.warning(`Atención: Se detectaron ${duplicates.length} categorías duplicadas.`, {
+                description: 'Esto puede causar que parezca que no se borran.',
+                action: {
+                    label: 'Ver en Consola',
+                    onClick: () => console.log('Duplicados:', duplicates)
+                },
+                duration: 10000
+            });
+        }
+    }, [categories]);
+
+    // --- HANDLERS ---
     const handleAddCategory = () => {
         if (!newCategory.name.trim()) {
             toast.error('Ingresa un nombre para la categoría');
