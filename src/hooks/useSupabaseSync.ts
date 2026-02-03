@@ -122,27 +122,40 @@ export function useSupabaseSync() {
         try {
             console.log('[Sync] Removing category from DB:', categoryId);
 
-            // We need to call the db function and check count
+            // 1. Perform Delete
             const { error, count } = await supabase
                 .from('categories')
                 .delete({ count: 'exact' })
                 .eq('id', categoryId);
-            // Removed explicit user_id equality check solely to rely on RLS, 
-            // in case there's a slight mismatch in local user object (unlikely but safer).
-            // RLS Policies enforce auth.uid() = user_id anyway.
 
             if (error) throw error;
 
-            if (count === 0) {
-                console.warn('[Sync] Warning: No rows deleted. ID not found or permission denied:', categoryId);
+            // 2. Paranoid Verification: Check if it still exists
+            const { data: checkData, error: checkError } = await supabase
+                .from('categories')
+                .select('id')
+                .eq('id', categoryId)
+                .single();
+
+            // If checkData exists, it implies the delete FAILED silently (maybe RLS?)
+            if (checkData) {
+                console.error('[Sync] CRITICAL: Category still exists after delete!', checkData);
+                toast.error('Error crítico: La base de datos rechazó el borrado. Verifica permisos.');
                 return false;
+            }
+
+            if (count === 0) {
+                // If count is 0, it wasn't there to begin with (or RLS hid it).
+                // But since checkData is null, it's definitely gone now.
+                console.warn('[Sync] Warning: Delete count was 0, but record is gone.');
+                return true;
             } else {
-                console.log('[Sync] Category removed from DB successfully');
+                console.log('[Sync] Category verified deleted.');
                 return true;
             }
         } catch (error: any) {
             console.error('[Sync] Error deleting category:', error);
-            // Silent error for user experience, but log it
+            toast.error('Error al sincronizar borrado: ' + (error.message || 'Desconocido'));
             return false;
         }
     }, [user]);
