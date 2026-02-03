@@ -148,6 +148,8 @@ export function PLTable({ filterType }: PLTableProps) {
         return parseFloat(value.replace(/[^0-9.-]/g, '')) || 0;
     };
 
+    const { removeCategoryByName, updateTransactionAndSync, deleteTransactionAndSync } = useSupabaseSync();
+
     const handleCellClick = useCallback(
         (categoryName: string, month: number, txType: TransactionType, currentValue: number) => {
             setEditingCell({ categoryName, month, type: txType });
@@ -156,7 +158,7 @@ export function PLTable({ filterType }: PLTableProps) {
         []
     );
 
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         if (!editingCell) return;
 
         const newAmount = parseCurrency(editValue);
@@ -173,7 +175,8 @@ export function PLTable({ filterType }: PLTableProps) {
         });
 
         if (transaction) {
-            updateTransaction(transaction.id, { amount: newAmount });
+            // Update & Sync immediately
+            await updateTransactionAndSync(transaction.id, { amount: newAmount });
 
             const cellKey = `${categoryName}-${month}`;
             setAnimatingCells((prev) => new Set(prev).add(cellKey));
@@ -190,7 +193,7 @@ export function PLTable({ filterType }: PLTableProps) {
 
         setEditingCell(null);
         setEditValue('');
-    }, [editingCell, editValue, transactions, filters.year, updateTransaction]);
+    }, [editingCell, editValue, transactions, filters.year, updateTransactionAndSync]);
 
     const handleCancel = useCallback(() => {
         setEditingCell(null);
@@ -198,9 +201,11 @@ export function PLTable({ filterType }: PLTableProps) {
     }, []);
 
     const handleStatusToggle = useCallback(
-        (transactionId: string, currentStatus: TransactionStatus) => {
+        async (transactionId: string, currentStatus: TransactionStatus) => {
             const newStatus: TransactionStatus = currentStatus === 'real' ? 'projected' : 'real';
-            updateTransaction(transactionId, { status: newStatus });
+
+            // Update & Sync immediately
+            await updateTransactionAndSync(transactionId, { status: newStatus });
 
             if (newStatus === 'real') {
                 toast.success('Marcado como confirmado');
@@ -208,10 +213,8 @@ export function PLTable({ filterType }: PLTableProps) {
                 toast.info('Marcado como proyectado');
             }
         },
-        [updateTransaction]
+        [updateTransactionAndSync]
     );
-
-    const { removeCategoryByName } = useSupabaseSync();
 
     const handleDeleteCategory = useCallback(
         async (categoryName: string, txType: TransactionType) => {
@@ -226,8 +229,9 @@ export function PLTable({ filterType }: PLTableProps) {
                 );
             });
 
-            // Delete transactions (Client side for now, should be server side ideally but DB cascade is missing)
-            toDelete.forEach((t) => deleteTransaction(t.id));
+            // Delete transactions via Sync hook
+            // Note: Parallel execution for speed
+            await Promise.all(toDelete.map((t) => deleteTransactionAndSync(t.id)));
 
             if (category) {
                 // Use RPC to delete category (and duplicates)
@@ -235,11 +239,8 @@ export function PLTable({ filterType }: PLTableProps) {
             }
 
             // Silent success as requested
-            // toast.success('Categoría eliminada', {
-            //     description: `"${categoryName}" y sus ${toDelete.length} movimientos fueron eliminados.`,
-            // });
         },
-        [categories, transactions, filters.year, deleteTransaction, removeCategoryByName]
+        [categories, transactions, filters.year, deleteTransactionAndSync, removeCategoryByName]
     );
 
     const renderCategoryRow = (

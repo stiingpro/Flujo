@@ -269,6 +269,46 @@ export function useSupabaseSync() {
         }
     }, [user, loadedForUserId, loadFromSupabase, setCategories, setTransactions]);
 
+    // Helper: Update Transaction & Sync to DB
+    const updateTransactionAndSync = useCallback(async (id: string, updates: Partial<Transaction>) => {
+        if (!user) return;
+
+        // 1. Optimistic Update (Store)
+        const currentTx = transactions.find(t => t.id === id);
+        if (!currentTx) return;
+
+        const updatedTx = { ...currentTx, ...updates };
+        setTransactions(transactions.map(t => t.id === id ? updatedTx : t)); // Manual store update to avoid circular dependency if we used store.updateTransaction
+
+        try {
+            // 2. DB Update
+            console.log('[Sync] Updating transaction in DB:', id);
+            await upsertTransaction({ ...updatedTx, user_id: user.id });
+            // Silent success
+        } catch (error) {
+            console.error('[Sync] Error updating transaction:', error);
+            toast.error('Error al guardar cambio. Recarga la página.');
+            // Rollback? Taking a risk here for simplicity.
+        }
+    }, [user, transactions, setTransactions]);
+
+    // Helper: Delete Transaction & Sync to DB
+    const deleteTransactionAndSync = useCallback(async (id: string) => {
+        if (!user) return;
+
+        // 1. Optimistic Delete (Store)
+        setTransactions(transactions.filter(t => t.id !== id));
+
+        try {
+            // 2. DB Delete
+            console.log('[Sync] Deleting transaction from DB:', id);
+            await dbDeleteTransaction(id);
+        } catch (error) {
+            console.error('[Sync] Error deleting transaction:', error);
+            toast.error('Error al borrar movimiento.');
+        }
+    }, [user, transactions, setTransactions]);
+
     return {
         loadFromSupabase,
         syncTransaction,
@@ -277,6 +317,8 @@ export function useSupabaseSync() {
         removeCategory,
         removeCategoryByName,
         syncAllToSupabase,
+        updateTransactionAndSync, // Export new helper
+        deleteTransactionAndSync, // Export new helper
         isLoaded: loadedForUserId === user?.id,
         isSyncing,
     };
