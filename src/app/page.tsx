@@ -29,11 +29,12 @@ import { ImportDialog } from '@/components/import/ImportDialog';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { CategoryManager } from '@/components/categories/CategoryManager';
 import { ExcelExport } from '@/components/export/ExcelExport';
-import { KPICards } from '@/components/dashboard/KPICards';
-import { UtilityChart } from '@/components/dashboard/UtilityChart';
+// import { KPICards } from '@/components/dashboard/KPICards'; // Replaced by DashboardPro
+// import { UtilityChart } from '@/components/dashboard/UtilityChart'; // Replaced by DashboardPro
 import { PLTable } from '@/components/dashboard/PLTable';
 import { SummaryTable } from '@/components/dashboard/SummaryTable';
-import { ClientRevenueCharts } from '@/components/analytics/ClientRevenueCharts';
+// import { ClientRevenueCharts } from '@/components/analytics/ClientRevenueCharts'; // Replaced by DashboardPro
+import { DashboardPro } from '@/components/dashboard/DashboardPro';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { MainTab } from '@/types';
 import { YearCopyButton } from '@/components/dashboard/YearCopyButton';
@@ -275,20 +276,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* KPI Cards */}
-            <KPICards />
-
-            {/* Main Chart */}
-            <UtilityChart />
-
-            {/* Client Revenue Analytics - Only for Empresa */}
-            <div className="pt-6 border-t">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-                Análisis de Clientes (Empresa)
-              </h3>
-              <ClientRevenueCharts />
-            </div>
+            <DashboardPro />
           </TabsContent>
         </Tabs>
       </main>

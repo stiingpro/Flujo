@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useHistory } from '@/providers/HistoryProvider';
 import {
     syncAllData,
     bulkUpsertTransactions,
@@ -23,9 +24,13 @@ export function useSupabaseSync() {
         categories,
         setTransactions,
         setCategories,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction,
         setLoading,
         setError,
     } = useFinanceStore();
+    // Track if we've loaded data for the current user
 
     // Track if we've loaded data for the current user
     const [loadedForUserId, setLoadedForUserId] = useState<string | null>(null);
@@ -269,12 +274,24 @@ export function useSupabaseSync() {
         }
     }, [user, loadedForUserId, loadFromSupabase, setCategories, setTransactions]);
 
+    // ... (rest of load logic) ...
+
+    const { addToHistory } = useHistory();
+
     // Helper: Add Transaction & Sync to DB
     const addTransactionAndSync = useCallback(async (transaction: Transaction) => {
         if (!user) return;
 
         // 1. Optimistic Add (Store)
-        setTransactions([...transactions, transaction]);
+        addTransaction(transaction);
+
+        // History: Undo = Delete it (Use Store Action for safety)
+        addToHistory('Crear movimiento', async () => {
+            // Optimistic Remove via Store Action (handles state properly)
+            deleteTransaction(transaction.id);
+            // DB Remove
+            await dbDeleteTransaction(transaction.id);
+        });
 
         try {
             // 2. DB Insert
@@ -283,10 +300,10 @@ export function useSupabaseSync() {
         } catch (error) {
             console.error('[Sync] Error adding transaction:', error);
             toast.error('Error al crear movimiento.');
-            // Rollback optimistic update
-            setTransactions(transactions.filter(t => t.id !== transaction.id));
+            // Rollback
+            deleteTransaction(transaction.id);
         }
-    }, [user, transactions, setTransactions]);
+    }, [user, transactions, addTransaction, deleteTransaction, addToHistory]);
 
     // Helper: Update Transaction & Sync to DB
     const updateTransactionAndSync = useCallback(async (id: string, updates: Partial<Transaction>) => {
@@ -297,7 +314,18 @@ export function useSupabaseSync() {
         if (!currentTx) return;
 
         const updatedTx = { ...currentTx, ...updates };
-        setTransactions(transactions.map(t => t.id === id ? updatedTx : t)); // Manual store update to avoid circular dependency if we used store.updateTransaction
+
+        // History: Undo = Revert to old values
+        addToHistory('Editar movimiento', async () => {
+            // Optimistic Revert via Store Action
+            // We need to revert specific fields, or just spread the old object
+            updateTransaction(id, currentTx);
+            // DB Revert
+            await upsertTransaction({ ...currentTx, user_id: user.id });
+        });
+
+        // Apply update
+        updateTransaction(id, updatedTx);
 
         try {
             // 2. DB Update
@@ -307,16 +335,26 @@ export function useSupabaseSync() {
         } catch (error) {
             console.error('[Sync] Error updating transaction:', error);
             toast.error('Error al guardar cambio. Recarga la página.');
-            // Rollback? Taking a risk here for simplicity.
         }
-    }, [user, transactions, setTransactions]);
+    }, [user, transactions, updateTransaction, addToHistory]);
 
     // Helper: Delete Transaction & Sync to DB
     const deleteTransactionAndSync = useCallback(async (id: string) => {
         if (!user) return;
 
+        const txToDelete = transactions.find(t => t.id === id);
+        if (!txToDelete) return;
+
         // 1. Optimistic Delete (Store)
-        setTransactions(transactions.filter(t => t.id !== id));
+        deleteTransaction(id);
+
+        // History: Undo = Restore it
+        addToHistory('Eliminar movimiento', async () => {
+            // Optimistic Restore via Store Action
+            addTransaction(txToDelete);
+            // DB Restore
+            await upsertTransaction({ ...txToDelete, user_id: user.id });
+        });
 
         try {
             // 2. DB Delete
@@ -326,7 +364,7 @@ export function useSupabaseSync() {
             console.error('[Sync] Error deleting transaction:', error);
             toast.error('Error al borrar movimiento.');
         }
-    }, [user, transactions, setTransactions]);
+    }, [user, transactions, addTransaction, deleteTransaction, addToHistory]);
 
     return {
         loadFromSupabase,

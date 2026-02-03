@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { HistoryProvider } from "@/providers/HistoryProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,8 +42,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          {children}
-          <Toaster richColors position="top-right" />
+          <HistoryProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </HistoryProvider>
         </AuthProvider>
       </body>
     </html>
