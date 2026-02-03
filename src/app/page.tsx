@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  LayoutDashboard,
   Moon,
   Sun,
   TrendingDown,
@@ -40,10 +40,11 @@ import { MainTab } from '@/types';
 import { YearCopyButton } from '@/components/dashboard/YearCopyButton';
 import { useAuth } from '@/providers/AuthProvider';
 import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
+import { ProfileSettingsDialog } from '@/components/profile/ProfileSettingsDialog';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 
 export default function DashboardPage() {
-  const { filters, setFilters, toggleProjectedMode, transactions, isLoading } = useFinanceStore();
+  const { filters, setFilters, toggleProjectedMode, transactions, isLoading, profile } = useFinanceStore();
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -86,11 +87,16 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600">
-                <LayoutDashboard className="h-5 w-5 text-white" />
+              <div className="relative h-10 w-10 overflow-hidden rounded-lg">
+                <Image
+                  src={profile?.logo_url || "/logo.jpg"}
+                  alt="FlujoExpert Logo"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">FlujoGlobal</h1>
+                <h1 className="text-xl font-bold text-gray-900">{profile?.company_name || 'FlujoExpert'}</h1>
                 <p className="text-xs text-muted-foreground">Gestión de Flujo de Caja</p>
               </div>
             </div>
@@ -104,6 +110,7 @@ export default function DashboardPage() {
               <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
+              <ProfileSettingsDialog />
               <ChangePasswordDialog />
               <Button variant="ghost" size="icon" onClick={() => signOut()} title="Cerrar Sesión">
                 <LogOut className="h-5 w-5" />

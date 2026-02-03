@@ -173,3 +173,11 @@ export interface ClientRevenueData {
 
 // Navigation tabs
 export type MainTab = 'gastos' | 'ingresos' | 'resumen' | 'dashboard';
+
+// User Profile
+export interface Profile {
+    id: string; // matches auth.users.id
+    company_name?: string;
+    logo_url?: string;
+    updated_at?: string;
+}

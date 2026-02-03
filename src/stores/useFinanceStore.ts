@@ -9,6 +9,7 @@ import {
     MonthlyData,
     CategoryLevel,
     ClientRevenueData,
+    Profile,
     MONTH_NAMES,
 } from '@/types';
 
@@ -16,6 +17,7 @@ interface FinanceState {
     // Data
     transactions: Transaction[];
     categories: Category[];
+    profile: Profile | null;
     isLoading: boolean;
     error: string | null;
 
@@ -35,6 +37,9 @@ interface FinanceState {
     addCategory: (category: Category) => void;
     updateCategory: (id: string, updates: Partial<Category>) => void;
     deleteCategory: (id: string) => void;
+
+    setProfile: (profile: Profile | null) => void;
+    updateProfile: (updates: Partial<Profile>) => void;
 
     copyYearData: (fromYear: number, toYear: number) => void;
 
@@ -57,6 +62,7 @@ export const useFinanceStore = create<FinanceState>()(
             // Initial state
             transactions: [],
             categories: [],
+            profile: null,
             isLoading: false,
             error: null,
             isDemoMode: true,
@@ -98,6 +104,13 @@ export const useFinanceStore = create<FinanceState>()(
                     categories: state.categories.map((c) =>
                         c.id === id ? { ...c, ...updates } : c
                     ),
+                })),
+
+            setProfile: (profile) => set({ profile }),
+
+            updateProfile: (updates) =>
+                set((state) => ({
+                    profile: state.profile ? { ...state.profile, ...updates } : null,
                 })),
 
             copyYearData: (fromYear, toYear) =>

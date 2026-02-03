@@ -27,6 +27,7 @@ export function useSupabaseSync() {
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        setProfile,
         setLoading,
         setError,
     } = useFinanceStore();
@@ -55,6 +56,20 @@ export function useSupabaseSync() {
 
             setCategories(data.categories);
             setTransactions(data.transactions);
+
+            // Load Profile
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (profileData) {
+                setProfile(profileData);
+            } else if (profileError && profileError.code !== 'PGRST116') {
+                console.warn('[Sync] Error loading profile:', profileError);
+            }
+
             setLoadedForUserId(user.id);
 
             if (data.transactions.length > 0 || data.categories.length > 0) {
