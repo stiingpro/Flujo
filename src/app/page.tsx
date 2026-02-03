@@ -70,7 +70,7 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-
+  const currentYear = new Date().getFullYear();
   // Only show current year and future years (next 2 years -> Total 3: 2026, 2027, 2028)
   const years = Array.from({ length: 3 }, (_, i) => currentYear + i);
 
