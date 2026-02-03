@@ -22,6 +22,11 @@ export function YearCopyButton() {
     const currentYear = filters.year;
     const prevYear = currentYear - 1;
 
+    // Do not show button for the first year (2026) or earlier
+    if (prevYear < 2026) {
+        return null;
+    }
+
     const handleCopy = () => {
         const hasPrevData = transactions.some(t => new Date(t.date).getFullYear() === prevYear);
         if (!hasPrevData) {

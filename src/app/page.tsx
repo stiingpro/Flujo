@@ -72,8 +72,9 @@ export default function DashboardPage() {
 
 
   const currentYear = new Date().getFullYear();
-  // Only show current year and future years (next 3 years)
-  const years = Array.from({ length: 4 }, (_, i) => currentYear + i);
+  const currentYear = new Date().getFullYear();
+  // Only show current year and future years (next 2 years -> Total 3: 2026, 2027, 2028)
+  const years = Array.from({ length: 3 }, (_, i) => currentYear + i);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
