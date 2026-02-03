@@ -186,22 +186,55 @@ export function CategoryManager() {
     };
 
     const handleDeleteCategory = async (category: Category) => {
-        // PERFORANCE CHANGE: We act pessimistically here. We do NOT update UI until DB confirms delete.
-        // This prevents the user from logging out before the delete is actually persisted.
-        const success = await removeCategory(category.id);
+        // PERFORANCE CHANGE & DUPLICATE FIX:
+        // Instead of just deleting this specific ID, we look for ALL categories with this name
+        // and delete them all. This cleans up invisible duplicates rooted in the DB.
 
-        if (!success) {
-            toast.error('Error: No se pudo eliminar. Intenta recargar.');
-            return;
+        const normalizedName = category.name.trim().toUpperCase();
+
+        // Find all IDs that match this name (for the same user/type implicitly)
+        const idsToDelete = categories
+            .filter(c => c.name.trim().toUpperCase() === normalizedName)
+            .map(c => c.id);
+
+        if (idsToDelete.length === 0) return; // Should not happen
+
+        if (idsToDelete.length > 1) {
+            console.log(`[Aggressive Delete] Found ${idsToDelete.length} duplicates for "${category.name}". Deleting all.`);
+            toast.info(`Limpiando ${idsToDelete.length} elementos duplicados de "${category.name}"...`);
         }
 
-        // Only remove visually if DB confirm success
-        deleteCategory(category.id);
+        // Execute deletions in parallel
+        const promises = idsToDelete.map(id => removeCategory(id));
+        const results = await Promise.all(promises);
 
-        if (selectedIds.has(category.id)) {
-            const newSet = new Set(selectedIds);
-            newSet.delete(category.id);
-            setSelectedIds(newSet);
+        const allSuccess = results.every(r => r === true);
+
+        if (!allSuccess) {
+            toast.error('Error: Algunos elementos no se pudieron eliminar. Intenta recargar.');
+            // We could return here, but let's clear what we can locally
+        }
+
+        // Only remove visually if at least one succeeded (or all)
+        // Ideally we remove the ones that succeeded.
+        const successfullyDeletedIds = idsToDelete.filter((_, index) => results[index]);
+
+        successfullyDeletedIds.forEach(id => deleteCategory(id));
+
+        // Update selection if needed
+        const newSet = new Set(selectedIds);
+        let selectionChanged = false;
+        successfullyDeletedIds.forEach(id => {
+            if (newSet.has(id)) {
+                newSet.delete(id);
+                selectionChanged = true;
+            }
+        });
+
+        if (selectionChanged) setSelectedIds(newSet);
+
+        if (idsToDelete.length > 1 && allSuccess) {
+            toast.success(`Se eliminaron ${idsToDelete.length} copias de "${category.name}" correctamente.`);
         }
     };
 

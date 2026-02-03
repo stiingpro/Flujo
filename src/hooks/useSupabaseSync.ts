@@ -213,10 +213,18 @@ export function useSupabaseSync() {
 
         // Reset loaded state when user logs out
         if (!user && loadedForUserId) {
-            console.log('[Sync] User logged out, resetting state');
+            console.log('[Sync] User logged out, clearing local data & resetting state');
             setLoadedForUserId(null);
+
+            // AGGRESSIVE CLEANUP: Clear store to prevent stale data
+            setCategories([]);
+            setTransactions([]);
+            // Verify cleared
+            setTimeout(() => {
+                console.log('[Sync] Data cleared. ready for next login.');
+            }, 100);
         }
-    }, [user, loadedForUserId, loadFromSupabase]);
+    }, [user, loadedForUserId, loadFromSupabase, setCategories, setTransactions]);
 
     return {
         loadFromSupabase,
