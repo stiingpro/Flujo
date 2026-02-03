@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import {
@@ -112,19 +113,37 @@ export function useSupabaseSync() {
     }, [user]);
 
     // Delete category from Supabase
-    const removeCategory = useCallback(async (categoryId: string) => {
+    const removeCategory = useCallback(async (categoryId: string): Promise<boolean> => {
         if (!user) {
             console.error('[Sync] Cannot delete category: No user logged in');
-            return;
+            return false;
         }
 
         try {
             console.log('[Sync] Removing category from DB:', categoryId);
-            await dbDeleteCategory(categoryId);
-            console.log('[Sync] Category removed from DB successfully');
+
+            // We need to call the db function and check count
+            const { error, count } = await supabase
+                .from('categories')
+                .delete({ count: 'exact' })
+                .eq('id', categoryId);
+            // Removed explicit user_id equality check solely to rely on RLS, 
+            // in case there's a slight mismatch in local user object (unlikely but safer).
+            // RLS Policies enforce auth.uid() = user_id anyway.
+
+            if (error) throw error;
+
+            if (count === 0) {
+                console.warn('[Sync] Warning: No rows deleted. ID not found or permission denied:', categoryId);
+                return false;
+            } else {
+                console.log('[Sync] Category removed from DB successfully');
+                return true;
+            }
         } catch (error: any) {
             console.error('[Sync] Error deleting category:', error);
-            toast.error('Error al eliminar categoría: ' + (error.message || 'Error desconocido'));
+            // Silent error for user experience, but log it
+            return false;
         }
     }, [user]);
 

@@ -155,8 +155,17 @@ export function CategoryManager() {
     };
 
     const handleDeleteCategory = async (category: Category) => {
+        // PERFORANCE CHANGE: We act pessimistically here. We do NOT update UI until DB confirms delete.
+        // This prevents the user from logging out before the delete is actually persisted.
+        const success = await removeCategory(category.id);
+
+        if (!success) {
+            toast.error('Error: No se pudo eliminar. Intenta recargar.');
+            return;
+        }
+
+        // Only remove visually if DB confirm success
         deleteCategory(category.id);
-        await removeCategory(category.id); // Remove from Supabase
 
         if (selectedIds.has(category.id)) {
             const newSet = new Set(selectedIds);
@@ -190,16 +199,34 @@ export function CategoryManager() {
 
     const handleBulkDelete = async () => {
         if (confirm(`¿Estás seguro de eliminar ${selectedIds.size} categorías?`)) {
-            const promises: Promise<void>[] = [];
+            const idsToDelete = Array.from(selectedIds);
 
-            selectedIds.forEach(id => {
-                deleteCategory(id);
-                // Queue remove from Supabase
-                promises.push(removeCategory(id));
+            // Execute all remote deletes first
+            const promises = idsToDelete.map(async (id) => {
+                const success = await removeCategory(id);
+                return { id, success };
             });
 
-            await Promise.all(promises);
-            setSelectedIds(new Set());
+            // Wait for all to finish
+            const outcomes = await Promise.all(promises);
+
+            // Update local state only for successful ones
+            let deletedCount = 0;
+            const remainingSelection = new Set(selectedIds);
+
+            outcomes.forEach(({ id, success }) => {
+                if (success) {
+                    deleteCategory(id); // Only verify delete locally if remote succeeded
+                    remainingSelection.delete(id);
+                    deletedCount++;
+                }
+            });
+
+            setSelectedIds(remainingSelection);
+
+            if (deletedCount < idsToDelete.length) {
+                toast.error(`Error: ${idsToDelete.length - deletedCount} categorías no se pudieron borrar.`);
+            }
         }
     };
 
