@@ -33,6 +33,10 @@ export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogPr
     // Fallback if profile doesn't exist locally perfectly yet
     const currentLogo = profile?.logo_url || null;
     const companyName = profile?.company_name || '';
+    const fullName = profile?.full_name || '';
+    const email = profile?.contact_email || '';
+    const phone = profile?.phone || '';
+    const country = profile?.country || '';
 
     const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         try {
@@ -93,19 +97,22 @@ export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogPr
         }
     };
 
-    const handleSaveName = async (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         const formData = new FormData(e.target as HTMLFormElement);
-        const name = formData.get('companyName') as string;
+
+        const updates = {
+            id: user!.id,
+            company_name: formData.get('companyName') as string,
+            full_name: formData.get('fullName') as string,
+            contact_email: formData.get('contactEmail') as string,
+            phone: formData.get('phone') as string,
+            country: formData.get('country') as string,
+            updated_at: new Date().toISOString(),
+        };
 
         try {
-            const updates = {
-                id: user!.id,
-                company_name: name,
-                updated_at: new Date().toISOString(),
-            };
-
             const { error } = await supabase
                 .from('profiles')
                 .upsert(updates);
@@ -113,15 +120,15 @@ export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogPr
             if (error) throw error;
 
             if (profile) {
-                updateProfile({ company_name: name });
+                updateProfile(updates);
             } else {
                 setProfile({ ...updates, logo_url: currentLogo || undefined });
             }
 
-            toast.success('Nombre guardado');
+            toast.success('Perfil actualizado');
             setIsOpen(false);
         } catch (error: any) {
-            toast.error('Error al guardar nombre: ' + error.message);
+            toast.error('Error al guardar: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -138,11 +145,11 @@ export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogPr
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Perfil de Empresa</DialogTitle>
+                    <DialogTitle>Configuración de Perfil</DialogTitle>
                     <DialogDescription>
-                        Personaliza el logo y nombre que aparece en la cabecera.
+                        Personaliza los datos de tu cuenta y empresa.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -173,16 +180,13 @@ export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogPr
                         </div>
                         <div className="text-center">
                             <Label className="text-sm font-medium">Logo de Marca</Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {uploading ? 'Subiendo...' : 'Click para subir imagen (PNG, JPG)'}
-                            </p>
                         </div>
                     </div>
 
-                    {/* Company Name Form */}
-                    <form onSubmit={handleSaveName} className="space-y-4">
+                    {/* Profile Form */}
+                    <form onSubmit={handleSave} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="companyName">Nombre de Fantasía</Label>
+                            <Label htmlFor="companyName">Nombre de Fantasía (Empresa)</Label>
                             <Input
                                 id="companyName"
                                 name="companyName"
@@ -190,6 +194,50 @@ export function ProfileSettingsDialog({ customTrigger }: ProfileSettingsDialogPr
                                 placeholder="Ej. STIING Ingeniería"
                             />
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="fullName">Nombre de Usuario</Label>
+                                <Input
+                                    id="fullName"
+                                    name="fullName"
+                                    defaultValue={fullName}
+                                    placeholder="Tu Nombre"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="country">País</Label>
+                                <Input
+                                    id="country"
+                                    name="country"
+                                    defaultValue={country}
+                                    placeholder="Ej. Chile"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="contactEmail">Correo de Contacto</Label>
+                                <Input
+                                    id="contactEmail"
+                                    name="contactEmail"
+                                    type="email"
+                                    defaultValue={email}
+                                    placeholder="contacto@empresa.com"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Número de Contacto</Label>
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    defaultValue={phone}
+                                    placeholder="+56 9 1234 5678"
+                                />
+                            </div>
+                        </div>
+
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Guardar Cambios

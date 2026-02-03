@@ -179,5 +179,9 @@ export interface Profile {
     id: string; // matches auth.users.id
     company_name?: string;
     logo_url?: string;
+    full_name?: string;
+    contact_email?: string;
+    phone?: string;
+    country?: string;
     updated_at?: string;
 }
