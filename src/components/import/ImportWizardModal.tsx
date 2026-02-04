@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
+import { useAuth } from '@/providers/AuthProvider';
 
 type WizardStep = 'upload' | 'preview' | 'syncing';
 
@@ -26,6 +27,7 @@ export function ImportWizardModal() {
 
     const { categories: existingCategories, addCategory } = useFinanceStore();
     const { addTransactionAndSync, syncCategory } = useSupabaseSync();
+    const { user } = useAuth();
 
     // 1. Parse File
     const processFile = async (file: File) => {
@@ -151,7 +153,7 @@ export function ImportWizardModal() {
                         level: 'empresa' as const, // Default, user can change later
                         is_fixed: false,
                         created_at: new Date().toISOString(),
-                        user_id: 'temp', // handled by hook/store
+                        user_id: user?.id || 'anonymous',
                     };
 
                     // We use syncCategory from hook which handles store + supabase
@@ -177,12 +179,17 @@ export function ImportWizardModal() {
                     origin: 'business' as const,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
+                    user_id: user?.id || 'anonymous',
+                    paymentStatus: 'confirmed' as const,
+                    currency_code: 'CLP',
+                    exchange_rate: 1,
+
                 };
 
                 // Use hook to ensure store + DB sync
                 // Note: performing this in loop is slow for 1000s of rows but safe for 100s.
                 // For bulk, we'd use a dedicated bulk insert RPC or endpoint, but reusing existing hook logic ensures consistency.
-                await addTransactionAndSync(newTx as any);
+                await addTransactionAndSync(newTx);
                 successCount++;
             }
 

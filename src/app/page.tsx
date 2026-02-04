@@ -29,6 +29,7 @@ import { ImportWizardModal } from '@/components/import/ImportWizardModal';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { CategoryManager } from '@/components/categories/CategoryManager';
 import { ExcelExport } from '@/components/export/ExcelExport';
+import { PDFExportButton } from '@/components/reports/PDFExportButton';
 // import { KPICards } from '@/components/dashboard/KPICards'; // Replaced by DashboardPro
 // import { UtilityChart } from '@/components/dashboard/UtilityChart'; // Replaced by DashboardPro
 import { PLTable } from '@/components/dashboard/PLTable';
@@ -105,6 +106,7 @@ export default function DashboardPage() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <ExcelExport />
+              <PDFExportButton />
               <ImportWizardModal />
               <TransactionForm />
               <CategoryManager />
