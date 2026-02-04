@@ -24,10 +24,15 @@ Ubicada en la parte superior fija de la pantalla. Contiene herramientas de confi
 
 Justo debajo de la cabecera, encontrarás los botones de operación diaria.
 
-*   **📄 Exportar**: Descarga toda la información actual (ingresos, gastos y estructura) en un archivo **Excel** compatible.
-*   **⬆️ Importar Histórico**: Permite cargar datos masivos desde una plantilla Excel. Útil para migrar datos de otros sistemas.
+*   **📄 Exportar Excel**: Genera un reporte profesional `.xlsx` con hojas de resumen y detalle.
+*   **📄 Reporte PDF**: Descarga un informe ejecutivo oficial, listo para presentar a directorio o bancos.
+*   **⬆️ Importar Histórico (Wizard)**: 
+    *   Sube tus archivos Excel antiguos sin importar el formato.
+    *   El asistente detectará automáticamente meses y categorías.
+    *   **Deduplicación Inteligente**: El sistema te avisará si intentas cargar transacciones que ya existen.
 *   **➕ Nuevo Movimiento (Botón Negro)**: La forma rápida de registrar un gasto o ingreso individual.
-    *   Abre un formulario donde ingresas: Monto, Categoría, Fecha y si ya fue pagado (Confirmado) o es una estimación (Pendiente).
+    *   **Moneda**: Ahora puedes registrar movimientos en **CLP**, **USD** o **UF**. El sistema convierte automáticamente a pesos para tus totales.
+    *   **Pagado vs Pendiente**: Define si el dinero ya salió de tu cuenta o es una provisión.
 *   **🏷️ Categorías**: Gestiona tus cuentas contables.
     *   Puedes crear nuevas categorías (ej. "Marketing", "Sueldos"), editarlas o eliminarlas.
     *   Las categorías se dividen en niveles "Empresa" y "Personal".
