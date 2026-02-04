@@ -1,29 +1,21 @@
-'use client';
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Sparkles } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { toast } from 'sonner';
-import { generateExcelReport } from '@/lib/export-utils';
+// import { generateExcelReport } from '@/lib/export-utils'; // Legacy
+import { useReport } from '@/context/ReportContext';
 
 export function ExcelExport() {
     const { transactions, categories, filters } = useFinanceStore();
-    const [isExporting, setIsExporting] = useState(false);
+    const { generateExcelReport, isGenerating } = useReport();
 
     const handleExport = async () => {
-        // Filter transactions for current year and filters
         const filteredTransactions = transactions.filter((t) => {
             const tDate = new Date(t.date);
             const matchYear = tDate.getFullYear() === filters.year;
-            // Also partial match for year month if needed, but year is main filter
-
             const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
-            // Allow exporting everything including projected if user wants data dump
-            // But usually we respect visual filters.
-            // Let's respect "showProjected" filter to align with what user sees on screen.
             const matchProjected = filters.showProjected ? true : t.status === 'real';
-
             return matchYear && matchOrigin && matchProjected;
         });
 
@@ -32,31 +24,22 @@ export function ExcelExport() {
             return;
         }
 
-        setIsExporting(true);
-        try {
-            await generateExcelReport({
-                transactions: filteredTransactions,
-                categories,
-                filters
-            });
-            toast.success('Reporte Excel generado con éxito');
-        } catch (error) {
-            console.error('Export Error:', error);
-            toast.error('Error al generar el reporte Excel');
-        } finally {
-            setIsExporting(false);
-        }
+        await generateExcelReport({
+            transactions: filteredTransactions,
+            categories,
+            year: filters.year
+        });
     };
 
     return (
         <Button
             variant="outline"
             onClick={handleExport}
-            className="gap-2"
-            disabled={isExporting}
+            className="gap-2 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+            disabled={isGenerating}
         >
-            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-            Exportar Excel
+            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+            Exportar Excel <span className="text-xs bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-medium ml-1">AI Powered</span>
         </Button>
     );
 }
