@@ -126,17 +126,8 @@ export function AdvancedExportManager({ children }: { children: React.ReactNode 
                 tl: { col: 7, row: 14 }
             });
 
-            // Add Data
-            builder.addData(
-                ['Fecha', 'Tipo', 'Categoría', 'Monto', 'Detalle'],
-                data.transactions.map(t => [
-                    t.date,
-                    t.type,
-                    data.categories.find(c => c.id === t.category_id)?.name || t.category_id,
-                    t.amount,
-                    t.description
-                ])
-            );
+            // 4. Add Legacy Details
+            builder.addLegacyDataSheet(data.transactions, data.categories);
 
             await builder.download(`FlujoExpert_Dashboard_${data.year}.xlsx`);
             toast.success('Reporte Avanzado Generado');

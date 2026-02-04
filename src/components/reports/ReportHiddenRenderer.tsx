@@ -73,46 +73,58 @@ export const ReportHiddenRenderer = forwardRef<HTMLDivElement, ReportHiddenRende
             </div>
 
             {/* 3. Trend and Breakdown */}
-            <div className="grid grid-cols-3 gap-8 h-[400px]">
+            <div className="grid grid-cols-3 gap-8 h-[500px]"> {/* Increased container height */}
                 {/* Trend Chart (Col 2/3) */}
-                <div id="report-trend" className="col-span-2 bg-white rounded-lg p-4 border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Evolución de Flujo de Caja (12m)</h3>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data.trend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1} />
-                                    <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis dataKey="month" axisLine={false} tick={{ fill: '#64748b' }} />
-                            <YAxis axisLine={false} tick={{ fill: '#64748b' }} />
-                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                            <Area type="monotone" dataKey="net" stroke="#0f172a" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                <div id="report-trend" className="col-span-2 bg-white rounded-lg p-6 border border-slate-100 flex flex-col justify-between">
+                    <h3 className="text-xl font-bold text-slate-800 mb-6">Evolución de Flujo de Caja (12m)</h3>
+                    <div style={{ width: '100%', height: '350px' }}> {/* Explicit fixed height for chart */}
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={data.trend} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1} />
+                                        <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="month" axisLine={false} tick={{ fill: '#64748b' }} tickMargin={10} />
+                                <YAxis axisLine={false} tick={{ fill: '#64748b' }} />
+                                <Area type="monotone" dataKey="net" stroke="#0f172a" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
                 {/* Expense Breakdown (Col 1/3) */}
-                <div id="report-breakdown" className="col-span-1 bg-white rounded-lg p-4 border border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Top Categorías</h3>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={data.expenses}
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {data.expenses.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Legend verticalAlign="bottom" height={36} />
-                        </PieChart>
-                    </ResponsiveContainer>
+                <div id="report-breakdown" className="col-span-1 bg-white rounded-lg p-6 border border-slate-100 flex flex-col justify-between">
+                    <h3 className="text-xl font-bold text-slate-800 mb-4">Top Categorías</h3>
+                    <div style={{ width: '100%', height: '350px' }}> {/* Explicit height to fit legend */}
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data.expenses}
+                                    innerRadius={70}
+                                    outerRadius={100} // Increased radius
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {data.expenses.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Legend
+                                    verticalAlign="bottom"
+                                    height={80} // Give space for legend items 
+                                    iconType="circle"
+                                    layout="horizontal"
+                                    wrapperStyle={{
+                                        paddingTop: '20px',
+                                        fontSize: '12px'
+                                    }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
         </div>

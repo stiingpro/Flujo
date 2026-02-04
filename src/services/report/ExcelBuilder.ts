@@ -65,9 +65,49 @@ export class ExcelBuilder {
         };
     }
 
-    public addData(headers: string[], data: any[][]) {
-        this.dataSheet.addRow(headers);
-        data.forEach(row => this.dataSheet.addRow(row));
+    // 3. Add Legacy Detail Sheet
+    public addLegacyDataSheet(transactions: any[], categories: any[]) {
+        const detailSheet = this.workbook.addWorksheet('Detalle Transacciones');
+
+        detailSheet.columns = [
+            { header: 'ID', key: 'id', width: 36 },
+            { header: 'Fecha', key: 'date', width: 15 },
+            { header: 'Categoría', key: 'category', width: 25 },
+            { header: 'Descripción', key: 'description', width: 40 },
+            { header: 'Tipo', key: 'type', width: 12 },
+            { header: 'Monto Original', key: 'amount_raw', width: 15 },
+            { header: 'Moneda', key: 'currency', width: 10 },
+            { header: 'Monto (CLP)', key: 'amount', width: 15 },
+            { header: 'Estado', key: 'status', width: 12 },
+            { header: 'Pago', key: 'paymentStatus', width: 12 },
+        ];
+
+        // Style Header
+        const headerRow = detailSheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } }; // Gray-800
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // Add Data
+        transactions.forEach(t => {
+            const cat = categories.find(c => c.id === t.category_id);
+            detailSheet.addRow({
+                id: t.id,
+                date: t.date,
+                category: cat?.name || 'Sin Categoría',
+                description: t.description || '-',
+                type: t.type === 'income' ? 'Ingreso' : 'Gasto',
+                amount_raw: t.amount,
+                currency: t.currency_code || 'CLP',
+                amount: (t.amount || 0) * (t.exchange_rate || 1),
+                status: t.status === 'real' ? 'Real' : 'Proyectado',
+                paymentStatus: t.paymentStatus === 'confirmed' ? 'Pagado' : 'Pendiente',
+            });
+        });
+
+        // Formatting
+        detailSheet.getColumn('amount').numFmt = '"$"#,##0';
+        detailSheet.getColumn('amount_raw').numFmt = '#,##0.00';
     }
 
     public async download(filename: string) {
