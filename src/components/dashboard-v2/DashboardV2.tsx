@@ -5,7 +5,8 @@ import { SmartMonthTable } from './SmartMonthTable';
 import { FocusToggle, FocusMode } from './FocusToggle';
 import { KPIGrid } from './KPIGrid';
 import { useFinanceStore } from '@/stores/useFinanceStore';
-import { MainTab } from '@/types';
+import { useMonthlyBalances } from '@/hooks/useMonthlyBalances';
+import { MainTab, MonthlyBalance } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingDown, TrendingUp, Sparkles, Filter } from 'lucide-react';
 
@@ -13,15 +14,59 @@ export function DashboardV2() {
     const [focusMode, setFocusMode] = useState<FocusMode>('all');
     const [activeTab, setActiveTab] = useState<'gastos' | 'ingresos'>('gastos');
     const { filters } = useFinanceStore();
+    const { balances, isLoading: isLoadingBalances } = useMonthlyBalances();
 
-    // Mock KPI Data (To be replaced with real calculations from store later)
-    // For now, we pass simple calculated or static data
+    // Calculate Real Metrics
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentYear = currentDate.getFullYear(); // e.g. 2026
+
+    // 1. Current Month Data
+    const currentMonthData = balances.find((b: MonthlyBalance) => b.year === filters.year && b.month === currentMonth) || {
+        total_income: 0,
+        total_expense: 0,
+        net_flow: 0
+    };
+
+    // 2. Last Month Data (for Delta)
+    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 1 ? filters.year - 1 : filters.year;
+    const lastMonthData = balances.find((b: MonthlyBalance) => b.year === lastMonthYear && b.month === lastMonth);
+
+    // Delta percentage calculation
+    const lastMonthNet = lastMonthData?.net_flow || 1; // Avoid division by zero
+    const currentNet = currentMonthData.net_flow;
+    const rawDelta = lastMonthData ? ((currentNet - lastMonthNet) / Math.abs(lastMonthNet)) * 100 : 0;
+    const lastMonthDelta = isFinite(rawDelta) ? rawDelta : 0;
+
+    // 3. Burn Rate (Average expense of last 3 months)
+    // Filter relevant months
+    const last3Months = balances
+        .filter((b: MonthlyBalance) => {
+            const bDate = new Date(b.year, b.month - 1);
+            const now = new Date(currentYear, currentMonth - 1);
+            const diffTime = Math.abs(now.getTime() - bDate.getTime());
+            const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
+            return diffMonths <= 3 && b.total_expense > 0;
+        });
+
+    const avgBurnRate = last3Months.length > 0
+        ? last3Months.reduce((acc: number, curr: MonthlyBalance) => acc + Number(curr.total_expense), 0) / last3Months.length
+        : 0;
+
+    // 4. Runway (Current Cash / Burn Rate)
+    // Find absolute latest balance (cumulative utility)
+    const latestBalanceRecord = [...balances].sort((a: MonthlyBalance, b: MonthlyBalance) => (a.year * 100 + a.month) - (b.year * 100 + b.month)).pop();
+    const currentCash = latestBalanceRecord?.cumulative_utility || 0;
+    const runway = avgBurnRate > 0 ? (currentCash / avgBurnRate) : 0;
+
+
     const metrics = {
-        runway: 4.5,
-        burnRate: 2500000,
-        monthlyRevenue: 3800000,
-        monthlyExpense: 2100000,
-        lastMonthDelta: 12.5,
+        runway: runway,
+        burnRate: avgBurnRate,
+        monthlyRevenue: Number(currentMonthData.total_income),
+        monthlyExpense: Number(currentMonthData.total_expense),
+        lastMonthDelta: lastMonthDelta,
     };
 
     return (

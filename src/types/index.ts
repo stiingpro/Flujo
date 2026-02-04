@@ -108,6 +108,16 @@ export interface MonthlyData {
     };
 }
 
+export interface MonthlyBalance {
+    user_id: string;
+    year: number;
+    month: number;
+    total_income: number;
+    total_expense: number;
+    net_flow: number;
+    cumulative_utility: number;
+}
+
 export interface CategoryMonthlyData {
     categoryId: string;
     categoryName: string;
