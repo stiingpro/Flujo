@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useFeatureMode } from '@/context/FeatureModeContext';
 import { useAuth } from '@/providers/AuthProvider';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useHistory } from '@/providers/HistoryProvider';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 
 export function useSupabaseSync() {
     const { user } = useAuth();
+    const { isPro } = useFeatureMode();
     const {
         transactions,
         categories,
@@ -86,12 +88,39 @@ export function useSupabaseSync() {
         }
     }, [user, setTransactions, setCategories, setLoading, setError]);
 
+    // FEATURE TOGGLE: Month Lock (Pro Mode)
+    const validateMonthLock = useCallback((dateStr: string) => {
+        if (!isPro) return true; // Standard mode allows everything
+
+        const txDate = new Date(dateStr);
+        const now = new Date();
+
+        // Simple logic: If transaction is from previous month or older, it's locked.
+        // Current month: allowed.
+        // E.g. Now is Feb 2026. Jan 2026 is locked.
+
+        // Normalize to YYYY-MM for comparison
+        const txMonth = txDate.getFullYear() * 12 + txDate.getMonth();
+        const currentMonth = now.getFullYear() * 12 + now.getMonth();
+
+        if (txMonth < currentMonth) {
+            toast.error('🚫 Mes Cerrado (Modo PRO)', {
+                description: 'No se pueden modificar registros de meses anteriores en versión Pro.'
+            });
+            return false;
+        }
+        return true;
+    }, [isPro]);
+
     // Sync a single transaction to Supabase
     const syncTransaction = useCallback(async (transaction: Transaction) => {
         if (!user) {
             console.log('[Sync] No user, skipping transaction sync');
             return;
         }
+
+        // Validate Lock
+        if (!validateMonthLock(transaction.date)) return;
 
         try {
             console.log('[Sync] Syncing single transaction:', transaction.id);
@@ -121,11 +150,17 @@ export function useSupabaseSync() {
     }, [user]);
 
     // Delete transaction from Supabase
-    const removeTransaction = useCallback(async (transactionId: string) => {
+    const removeTransaction = useCallback(async (id: string) => {
         if (!user) return;
 
+        // Look up transaction in store to check date for locking
+        const { transactions } = useFinanceStore.getState();
+        const tx = transactions.find(t => t.id === id);
+
+        if (tx && !validateMonthLock(tx.date)) return;
+
         try {
-            await dbDeleteTransaction(transactionId);
+            await dbDeleteTransaction(id);
         } catch (error: any) {
             console.error('[Sync] Error deleting transaction:', error);
             toast.error('Error al eliminar transacción');

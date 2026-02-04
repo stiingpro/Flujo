@@ -1,22 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 import { CurrencyProvider } from '@/context/CurrencyContext';
+import { FeatureModeProvider } from '@/context/FeatureModeContext';
+import { AuthProvider } from '@/providers/AuthProvider';
+import { BetaModeSwitch } from '@/components/common/BetaModeSwitch';
 
 export function ClientWrapper({ children }: { children: React.ReactNode }) {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) {
-        return null;
-    }
-
     return (
-        <CurrencyProvider>
-            {children}
-        </CurrencyProvider>
+        <AuthProvider>
+            <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+            >
+                <CurrencyProvider>
+                    <FeatureModeProvider>
+                        {children}
+                        <BetaModeSwitch />
+                        <Toaster />
+                    </FeatureModeProvider>
+                </CurrencyProvider>
+            </ThemeProvider>
+        </AuthProvider>
     );
 }

@@ -28,6 +28,7 @@ import { Plus, User, Building2, CreditCard, CheckCircle2, Clock } from 'lucide-r
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useAuth } from '@/providers/AuthProvider';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
+import { useFeatureMode } from '@/context/FeatureModeContext';
 import {
     TransactionType,
     TransactionStatus,
@@ -49,6 +50,7 @@ export function TransactionForm() {
     const { addTransaction, addCategory, categories } = useFinanceStore();
     const { user } = useAuth();
     const { syncTransaction, syncCategory } = useSupabaseSync();
+    const { isPro } = useFeatureMode();
 
     const [formData, setFormData] = useState<TransactionFormData>({
         date: new Date().toISOString().split('T')[0],
@@ -175,6 +177,14 @@ export function TransactionForm() {
                 };
 
                 addTransaction(transaction);
+
+                // FEATURE TOGGLE: Alerts (Pro Mode)
+                if (isPro && transaction.amount > 200000 && transaction.type === 'expense') {
+                    toast.warning('⚠️ Alerta de Gasto Elevado (PRO)', {
+                        description: `El monto de $${transaction.amount.toLocaleString()} supera el umbral de monitoreo.`
+                    });
+                }
+
                 syncTransaction(transaction); // Sync to Supabase
             }
         } else {
@@ -199,6 +209,14 @@ export function TransactionForm() {
             };
 
             addTransaction(newTransaction);
+
+            // FEATURE TOGGLE: Alerts (Pro Mode)
+            if (isPro && newTransaction.amount > 200000 && newTransaction.type === 'expense') {
+                toast.warning('⚠️ Alerta de Gasto Elevado (PRO)', {
+                    description: `El monto de $${newTransaction.amount.toLocaleString()} supera el umbral de monitoreo.`
+                });
+            }
+
             syncTransaction(newTransaction); // Sync to Supabase
         }
 
