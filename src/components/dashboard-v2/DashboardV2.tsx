@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SmartMonthTable } from './SmartMonthTable';
 import { FocusToggle, FocusMode } from './FocusToggle';
 import { InvestorToggle } from '@/components/dashboard/InvestorToggle';
 import { ImportWizardModal } from '@/components/import/ImportWizardModal';
 import { KPIGrid } from './KPIGrid';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useFeatureMode } from '@/context/FeatureModeContext';
 import { useMonthlyBalances } from '@/hooks/useMonthlyBalances';
 import { MainTab, MonthlyBalance } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +19,14 @@ export function DashboardV2() {
     const [activeTab, setActiveTab] = useState<'gastos' | 'ingresos'>('gastos');
     const { filters } = useFinanceStore();
     const { balances, isLoading: isLoadingBalances } = useMonthlyBalances();
+    const { isPro } = useFeatureMode(); // Add context hook
+
+    // Reset Investor Mode when returning to Standard
+    useEffect(() => {
+        if (!isPro) {
+            setIsInvestorMode(false);
+        }
+    }, [isPro]);
 
     // Calculate Real Metrics
     const currentDate = new Date();
@@ -64,12 +73,18 @@ export function DashboardV2() {
     const runway = avgBurnRate > 0 ? (currentCash / avgBurnRate) : 0;
 
 
+    // 5. Net Margin % (Net Income / Total Income)
+    const netMargin = currentMonthData.total_income > 0
+        ? ((currentMonthData.total_income - currentMonthData.total_expense) / currentMonthData.total_income) * 100
+        : 0;
+
     const metrics = {
         runway: runway,
         burnRate: avgBurnRate,
         monthlyRevenue: Number(currentMonthData.total_income),
         monthlyExpense: Number(currentMonthData.total_expense),
         lastMonthDelta: lastMonthDelta,
+        netMargin: netMargin,
     };
 
     return (

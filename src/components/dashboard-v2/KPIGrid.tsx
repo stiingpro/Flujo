@@ -4,20 +4,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowDownRight, ArrowUpRight, Wallet, Flame, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { useFeatureMode } from '@/context/FeatureModeContext';
+
 interface KPIMetrics {
     runway: number; // Months
     burnRate: number; // Average monthly expense
     monthlyRevenue: number; // Current month revenue projected + real
     monthlyExpense: number; // Current month expense projected + real
     lastMonthDelta: number; // Percentage change vs last month net income
+    netMargin: number; // New PRO metric
 }
 
 export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
+    const { isPro } = useFeatureMode();
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(val);
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${isPro ? '4' : '3'} gap-4 mb-6`}>
             {/* Runway Card */}
             <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100 shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -81,6 +85,28 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* PRO Metric: Net Margin */}
+            {isPro && (
+                <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <TrendingUp className="w-24 h-24 text-emerald-600" />
+                    </div>
+                    <CardContent className="p-6">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-emerald-900/60">Margen Neto (PRO)</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className={cn("text-3xl font-bold", metrics.netMargin >= 0 ? "text-emerald-700" : "text-rose-700")}>
+                                    {metrics.netMargin.toFixed(1)}%
+                                </span>
+                            </div>
+                            <p className="text-xs text-emerald-900/50 mt-2">
+                                Eficiencia operativa del mes actual.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }
