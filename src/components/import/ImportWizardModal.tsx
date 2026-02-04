@@ -21,14 +21,14 @@ export function ImportWizardModal() {
     const [stats, setStats] = useState<ImportStats | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useState<HTMLInputElement | null>(null);
+
     const { categories: existingCategories, addCategory } = useFinanceStore();
     const { addTransactionAndSync, syncCategory } = useSupabaseSync();
 
     // 1. Parse File
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const processFile = async (file: File) => {
         setIsProcessing(true);
         try {
             const buffer = await file.arrayBuffer();
@@ -90,6 +90,32 @@ export function ImportWizardModal() {
             toast.error('Error al leer el archivo: ' + err.message);
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) processFile(file);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+            processFile(file);
+        } else if (file) {
+            toast.error('Por favor, selecciona un archivo Excel válido (.xlsx)');
         }
     };
 
@@ -197,29 +223,42 @@ export function ImportWizardModal() {
 
                 <div className="flex-1 overflow-y-auto p-6">
                     {step === 'upload' && (
-                        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                        <div
+                            className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-xl transition-colors ${isDragging ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50'
+                                }`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
                             <div className="p-4 bg-white rounded-full shadow-sm mb-4">
-                                <Upload className="w-8 h-8 text-emerald-600" />
+                                <Upload className={`w-8 h-8 ${isDragging ? 'text-emerald-600' : 'text-gray-400'}`} />
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Sube tu archivo Excel</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                {isDragging ? 'Suelta el archivo aquí' : 'Sube tu archivo Excel'}
+                            </h3>
                             <p className="text-sm text-gray-500 text-center max-w-sm mb-6">
                                 Arrastra y suelta aquí tu archivo (.xlsx) o haz clic para seleccionar.
                                 Detectaremos automáticamente la estructura de meses y categorías.
                             </p>
 
-                            <label className="cursor-pointer">
-                                <Button variant="secondary" className="pointer-events-none">
+                            <div>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => document.getElementById('wizard-file-input')?.click()}
+                                    disabled={isProcessing}
+                                >
                                     {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                                     Seleccionar Archivo
                                 </Button>
                                 <input
+                                    id="wizard-file-input"
                                     type="file"
                                     accept=".xlsx, .xls"
                                     className="hidden"
-                                    onChange={handleFileUpload}
+                                    onChange={handleFileSelect}
                                     disabled={isProcessing}
                                 />
-                            </label>
+                            </div>
                         </div>
                     )}
 
