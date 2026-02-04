@@ -59,6 +59,8 @@ export function TransactionForm() {
         status: 'projected',
         paymentStatus: 'pending',
         origin: 'business',
+        currency_code: 'CLP',
+        exchange_rate: 1,
         isInstallment: false,
         totalInstallments: 1,
         isEqualInstallments: true,
@@ -164,6 +166,8 @@ export function TransactionForm() {
                         isEqualInstallments: formData.isEqualInstallments,
                         parentTransactionId: parentId,
                     },
+                    currency_code: formData.currency_code,
+                    exchange_rate: formData.exchange_rate,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                     user_id: userId,
@@ -186,6 +190,8 @@ export function TransactionForm() {
                 status: formData.status,
                 paymentStatus: formData.paymentStatus,
                 origin: formData.origin,
+                currency_code: formData.currency_code,
+                exchange_rate: formData.exchange_rate,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 user_id: userId,
@@ -206,6 +212,8 @@ export function TransactionForm() {
             status: 'projected',
             paymentStatus: 'pending',
             origin: 'business',
+            currency_code: 'CLP',
+            exchange_rate: 1,
             isInstallment: false,
             totalInstallments: 1,
             isEqualInstallments: true,
@@ -261,23 +269,70 @@ export function TransactionForm() {
                         </Button>
                     </div>
 
-                    {/* Amount */}
-                    <div className="space-y-2">
-                        <Label htmlFor="amount">Monto</Label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                $
-                            </span>
-                            <Input
-                                id="amount"
-                                type="number"
-                                placeholder="0"
-                                className="pl-7 font-mono-numbers text-lg"
-                                value={formData.amount || ''}
-                                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-                            />
+                    {/* Amount & Currency */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="amount">Monto</Label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                                    {formData.currency_code === 'USD' ? 'US$' : '$'}
+                                </span>
+                                <Input
+                                    id="amount"
+                                    type="number"
+                                    placeholder="0"
+                                    className="pl-9 font-mono-numbers text-lg"
+                                    value={formData.amount || ''}
+                                    onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Moneda</Label>
+                            <div className="flex gap-2">
+                                <Select
+                                    value={formData.currency_code}
+                                    onValueChange={(val) => setFormData({
+                                        ...formData,
+                                        currency_code: val,
+                                        exchange_rate: val === 'CLP' ? 1 : formData.exchange_rate
+                                    })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="CLP">CLP (Peso)</SelectItem>
+                                        <SelectItem value="USD">USD (Dólar)</SelectItem>
+                                        <SelectItem value="UF">UF (Unidad)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
+
+                    {/* Exchange Rate (only if not CLP) */}
+                    {formData.currency_code !== 'CLP' && (
+                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg space-y-2">
+                            <Label htmlFor="exchange_rate" className="text-xs text-blue-800">
+                                Tasa de Cambio ({formData.currency_code} → CLP)
+                            </Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    id="exchange_rate"
+                                    type="number"
+                                    placeholder="Ej. 950"
+                                    value={formData.exchange_rate}
+                                    onChange={(e) => setFormData({ ...formData, exchange_rate: parseFloat(e.target.value) || 1 })}
+                                    className="h-8 bg-white"
+                                />
+                                <span className="text-xs text-blue-600 font-medium whitespace-nowrap">
+                                    Total: ${(formData.amount * formData.exchange_rate).toLocaleString()} CLP
+                                </span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Category Selection Mode */}
                     <div className="space-y-3">

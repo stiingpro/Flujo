@@ -66,6 +66,9 @@ export interface Transaction {
     created_at: string;
     updated_at: string;
     user_id: string;
+    // Currency Support
+    currency_code: string; // 'CLP' | 'USD' | 'UF'
+    exchange_rate: number;
     // Joined fields
     category?: Category;
 }
@@ -80,6 +83,9 @@ export interface TransactionFormData {
     status: TransactionStatus;
     paymentStatus: PaymentStatus;
     origin: TransactionOrigin;
+    // Currency Support
+    currency_code: string;
+    exchange_rate: number;
     // Installment fields
     isInstallment: boolean;
     totalInstallments?: number;

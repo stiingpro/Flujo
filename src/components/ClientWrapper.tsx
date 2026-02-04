@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 
 export function ClientWrapper({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = useState(false);
@@ -13,5 +14,9 @@ export function ClientWrapper({ children }: { children: React.ReactNode }) {
         return null;
     }
 
-    return <>{children}</>;
+    return (
+        <CurrencyProvider>
+            {children}
+        </CurrencyProvider>
+    );
 }

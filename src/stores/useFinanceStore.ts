@@ -138,6 +138,8 @@ export const useFinanceStore = create<FinanceState>()(
                             installment: undefined,
                             updated_at: new Date().toISOString(),
                             created_at: new Date().toISOString(),
+                            currency_code: 'CLP',
+                            exchange_rate: 1,
                         };
                     });
 

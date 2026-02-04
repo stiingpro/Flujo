@@ -25,7 +25,7 @@ import {
   Scale,
   LogOut,
 } from 'lucide-react';
-import { ImportDialog } from '@/components/import/ImportDialog';
+import { ImportWizardModal } from '@/components/import/ImportWizardModal';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { CategoryManager } from '@/components/categories/CategoryManager';
 import { ExcelExport } from '@/components/export/ExcelExport';
@@ -105,7 +105,7 @@ export default function DashboardPage() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <ExcelExport />
-              <ImportDialog />
+              <ImportWizardModal />
               <TransactionForm />
               <CategoryManager />
               <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
