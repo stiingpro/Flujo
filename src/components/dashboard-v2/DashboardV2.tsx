@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { SmartMonthTable } from './SmartMonthTable';
 import { FocusToggle, FocusMode } from './FocusToggle';
+import { ImportWizardModal } from '@/components/import/ImportWizardModal';
 import { KPIGrid } from './KPIGrid';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useMonthlyBalances } from '@/hooks/useMonthlyBalances';
@@ -83,6 +84,7 @@ export function DashboardV2() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <ImportWizardModal />
                     <div className="flex bg-muted/30 p-1 rounded-lg border">
                         <FocusToggle value={focusMode} onChange={setFocusMode} />
                     </div>
