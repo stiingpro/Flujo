@@ -84,12 +84,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="relative h-10 w-10 overflow-hidden rounded-lg">
+              <div className="relative h-10 w-10 overflow-hidden rounded-lg shadow-sm">
                 <Image
                   src="/logo-new.png"
                   alt="Radar Financiero Logo"
@@ -98,8 +97,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Radar Financiero</h1>
-
+                <h1 className="text-xl font-bold text-foreground tracking-tight">Radar Financiero</h1>
               </div>
             </div>
 

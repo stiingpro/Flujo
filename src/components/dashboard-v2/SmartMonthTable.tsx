@@ -234,7 +234,7 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                     onClick={() => handleCellClick(categoryName, month, cellData.amount)}
                     className={cn(
                         "cursor-pointer font-mono-numbers tabular-nums text-sm transition-colors",
-                        isReal ? "font-bold text-gray-900" : "font-normal text-gray-500 italic"
+                        isReal ? "font-bold text-gray-900 dark:text-gray-100" : "font-normal text-muted-foreground italic"
                     )}
                 >
                     {formatCurrency(cellData.amount)}
@@ -248,7 +248,7 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                     }}
                     className={cn(
                         "w-4 h-4 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus:opacity-100",
-                        isReal ? "bg-emerald-100 text-emerald-600 opacity-100" : "bg-gray-100 text-gray-400"
+                        isReal ? "bg-emerald-100 text-emerald-600 opacity-100 dark:bg-emerald-900/50 dark:text-emerald-400" : "bg-muted text-muted-foreground"
                     )}
                     title={isReal ? "Confirmado (Click para revertir)" : "Proyectado (Click para confirmar)"}
                 >
@@ -269,9 +269,9 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
         return (
             <tr
                 key={item.name}
-                className="group hover:bg-muted/30 transition-colors border-b border-gray-50"
+                className="group hover:bg-muted/50 transition-colors border-b border-border"
             >
-                <td className="sticky left-0 z-20 bg-background/95 backdrop-blur group-hover:bg-gray-50/90 py-2 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                <td className="sticky left-0 z-20 bg-background/95 backdrop-blur group-hover:bg-muted/90 py-2 border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center gap-2 pl-4 pr-3 justify-between group/cell relative">
                         <div className="flex items-center gap-2 overflow-hidden">
                             <div className={cn("w-1 h-6 rounded-full shrink-0", sublevel ? SUBLEVEL_COLORS[sublevel as PersonalSublevel] : (level === 'personal' ? 'bg-purple-300' : 'bg-blue-400'))} />
@@ -295,7 +295,7 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                                 />
                             ) : (
                                 <span
-                                    className="font-medium text-sm text-gray-700 truncate max-w-[140px] cursor-pointer hover:underline decoration-dashed transition-all"
+                                    className="font-medium text-sm text-foreground truncate max-w-[140px] cursor-pointer hover:underline decoration-dashed transition-all"
                                     title="Click para editar nombre"
                                     onClick={() => setRenamingCategory({ name: item.name, value: item.name })}
                                 >
@@ -343,14 +343,14 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                             ref={isCurrentMonth ? currentMonthRef : undefined}
                             className={cn(
                                 "px-4 py-2 text-right relative min-w-[110px]",
-                                isCurrentMonth && "bg-blue-50/20"
+                                isCurrentMonth && "bg-blue-50/20 dark:bg-blue-900/10"
                             )}
                         >
                             {renderCell(item.name, monthNum, cellData)}
                         </td>
                     );
                 })}
-                <td className="px-4 py-2 text-right font-bold text-sm bg-gray-50/50 min-w-[100px]">
+                <td className="px-4 py-2 text-right font-bold text-sm bg-muted/30 min-w-[100px]">
                     {formatCurrency(rowTotal)}
                 </td>
             </tr>
@@ -361,33 +361,33 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
     const showCompany = focusMode === 'all' || focusMode === 'company';
 
     return (
-        <div className="relative rounded-xl border bg-white shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-gray-200/50">
+        <div className="relative rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-border">
 
             {/* Table Container - Horizontal Scroll */}
             <div ref={scrollContainerRef} className="overflow-x-auto relative flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 <table className="w-full border-collapse min-w-max text-left">
-                    <thead className="bg-gray-50/80 text-gray-500 sticky top-0 z-30 backdrop-blur-sm">
+                    <thead className="bg-muted/80 text-muted-foreground sticky top-0 z-30 backdrop-blur-sm">
                         <tr>
-                            <th className="sticky left-0 z-40 bg-gray-50 py-3 pl-4 font-semibold text-xs uppercase tracking-wider border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] w-[180px]">
+                            <th className="sticky left-0 z-40 bg-muted/90 py-3 pl-4 font-semibold text-xs uppercase tracking-wider border-r border-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] w-[180px]">
                                 Categoría
                             </th>
                             {MONTH_NAMES.map((m, i) => (
                                 <th key={m} className={cn(
                                     "py-3 px-4 font-semibold text-xs uppercase tracking-wider text-right min-w-[110px]",
-                                    i === currentMonthIndex && "text-blue-600 bg-blue-50/30"
+                                    i === currentMonthIndex && "text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/20"
                                 )}>
                                     {m.substring(0, 3)}
-                                    {i === currentMonthIndex && <span className="ml-1 text-[10px] bg-blue-100 text-blue-700 px-1 rounded">HOY</span>}
+                                    {i === currentMonthIndex && <span className="ml-1 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-1 rounded">HOY</span>}
                                 </th>
                             ))}
-                            <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider text-right min-w-[100px] bg-gray-100/50">
+                            <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider text-right min-w-[100px] bg-muted/50">
                                 Total
                             </th>
                         </tr>
                     </thead>
 
                     {/* Standard Table Body without Animations */}
-                    <tbody className="bg-white divide-y divide-gray-100">
+                    <tbody className="bg-card divide-y divide-border">
                         {/* PERSONAL SECTION */}
                         {showPersonal && Object.keys(groupedData.personalBySubLevel).map((sublevel) => {
                             const items = groupedData.personalBySubLevel[sublevel as PersonalSublevel];
@@ -396,8 +396,8 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                             return (
                                 <片 key={sublevel}>
                                     {/* Sublevel Header */}
-                                    <tr className="bg-purple-50/30">
-                                        <td className="sticky left-0 bg-purple-50/30 z-20 py-1.5 pl-4 flex items-center gap-2 border-r font-semibold text-xs text-purple-800 uppercase tracking-widest">
+                                    <tr className="bg-purple-50/30 dark:bg-purple-900/10">
+                                        <td className="sticky left-0 bg-purple-50/90 dark:bg-purple-900/20 backdrop-blur-sm z-20 py-1.5 pl-4 flex items-center gap-2 border-r border-border font-semibold text-xs text-purple-800 dark:text-purple-300 uppercase tracking-widest">
                                             {SUBLEVEL_LABELS[sublevel as PersonalSublevel]}
                                         </td>
                                         <td colSpan={13} />
@@ -407,11 +407,10 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                             );
                         })}
 
-                        {/* COMPANY SECTION */}
                         {showCompany && groupedData.empresa.length > 0 && (
                             <>
-                                <tr className="bg-blue-50/30 border-t-2 border-blue-100/50">
-                                    <td className="sticky left-0 bg-blue-50/30 z-20 py-2 pl-4 flex items-center gap-2 border-r font-bold text-xs text-blue-800 uppercase tracking-widest">
+                                <tr className="bg-blue-50/30 dark:bg-blue-900/10 border-t-2 border-blue-100/50 dark:border-blue-900/30">
+                                    <td className="sticky left-0 bg-blue-50/90 dark:bg-blue-900/20 backdrop-blur-sm z-20 py-2 pl-4 flex items-center gap-2 border-r border-border font-bold text-xs text-blue-800 dark:text-blue-300 uppercase tracking-widest">
                                         <Building2 className="w-3 h-3" />
                                         EMPRESA
                                     </td>
@@ -430,8 +429,8 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                         )}
                         {/* Grand Total Row */}
                         {data.size > 0 && (
-                            <TableRow className="sticky bottom-0 z-40 bg-gray-100 border-t-2 border-gray-300 shadow-md font-bold">
-                                <TableCell className="sticky left-0 z-50 bg-gray-100 font-bold text-gray-800 text-xs py-3 pl-4 uppercase tracking-wider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            <TableRow className="sticky bottom-0 z-40 bg-muted border-t-2 border-border shadow-md font-bold">
+                                <TableCell className="sticky left-0 z-50 bg-muted font-bold text-foreground text-xs py-3 pl-4 uppercase tracking-wider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-border">
                                     TOTAL
                                 </TableCell>
                                 {MONTH_NAMES.map((_, index) => {
@@ -454,12 +453,12 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                                     }, 0);
 
                                     return (
-                                        <TableCell key={month} className="text-right px-4 py-3 text-gray-900 min-w-[110px]">
+                                        <TableCell key={month} className="text-right px-4 py-3 text-foreground min-w-[110px]">
                                             {formatCurrency(monthTotal)}
                                         </TableCell>
                                     );
                                 })}
-                                <TableCell className="text-right px-4 py-3 text-gray-900 bg-gray-200/50 min-w-[100px]">
+                                <TableCell className="text-right px-4 py-3 text-foreground bg-muted-foreground/10 min-w-[100px]">
                                     {/* Grand Total of Totals */}
                                     {formatCurrency(
                                         Array.from(data.entries()).reduce((totalSum, [catName, monthsMap]) => {
