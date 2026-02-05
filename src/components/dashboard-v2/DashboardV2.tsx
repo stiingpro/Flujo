@@ -50,6 +50,10 @@ export function DashboardV2() {
 
             if (focusMode === 'company' && effectiveOrigin !== 'business') return false;
             if (focusMode === 'personal' && effectiveOrigin !== 'personal') return false;
+
+            // Respect Projected Mode
+            if (!filters.showProjected && t.status !== 'real') return false;
+
             return true;
         });
 

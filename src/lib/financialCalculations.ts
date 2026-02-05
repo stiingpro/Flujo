@@ -36,7 +36,10 @@ export function calculateMonthlyData(
             const effectiveOrigin = resolveOrigin(t, categories);
             const matchOrigin = filters.origin === 'all' || effectiveOrigin === filters.origin;
 
-            return matchYear && matchMonth && matchOrigin;
+            // Filter by status if showProjected is false
+            const matchStatus = filters.showProjected ? true : t.status === 'real';
+
+            return matchYear && matchMonth && matchOrigin && matchStatus;
         });
 
         const incomeReal = monthTransactions
@@ -96,7 +99,10 @@ export function calculateCategoryMonthlyData(
         const effectiveOrigin = resolveOrigin(t, categories);
         const matchOrigin = filters.origin === 'all' || effectiveOrigin === filters.origin;
 
-        return matchYear && matchType && matchOrigin;
+        // Filter by status if showProjected is false
+        const matchStatus = filters.showProjected ? true : t.status === 'real';
+
+        return matchYear && matchType && matchOrigin && matchStatus;
     });
 
     for (const t of filteredTransactions) {
