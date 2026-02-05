@@ -106,9 +106,9 @@ export async function parseExcelBuffer(buffer: ArrayBuffer): Promise<{ rows: Imp
             }
         });
 
-        // Require at least 2 months to confirm this is the header row
-        // Or 1 month if it explicitly says "Enero" (less robust but ok)
-        if (monthsFoundCount >= 2) {
+        // Require at least 1 month to confirm this is the header row
+        // Reverted to >= 1 as per user feedback (some files might only have "Enero")
+        if (monthsFoundCount >= 1) {
             headerRowIndex = i;
             monthColIndices = tempMonthIndices;
             if (tempCategoryIndex !== -1) categoryColIndex = tempCategoryIndex;
