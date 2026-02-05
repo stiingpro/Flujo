@@ -39,7 +39,7 @@ export function ExcelExport() {
             disabled={isGenerating}
         >
             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-            Exportar Excel <span className="text-xs bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-medium ml-1">AI Powered</span>
+            Reporte XLS <span className="text-xs bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-medium ml-1">AI Powered</span>
         </Button>
     );
 }

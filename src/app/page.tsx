@@ -99,7 +99,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Radar Financiero</h1>
-                <p className="text-xs text-muted-foreground">Gestión de Flujo de Caja</p>
+
               </div>
             </div>
 

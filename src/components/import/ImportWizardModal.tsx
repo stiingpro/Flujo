@@ -217,7 +217,7 @@ export function ImportWizardModal() {
             <DialogTrigger asChild>
                 <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-sm">
                     <FileSpreadsheet className="w-4 h-4" />
-                    Asistente de Importación
+                    Importar
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">

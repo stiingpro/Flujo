@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
-$ProjectRoot = "d:\ANTIGRAVITY\flujoglobal"
+$ProjectRoot = $PSScriptRoot
 $ReleaseDir = "$ProjectRoot\release"
-$StandaloneDir = "$ProjectRoot\.next\standalone\flujoglobal" # Adjusted for workspace structure
+$StandaloneDir = "$ProjectRoot\.next\standalone\railway" # Adjusted for workspace structure
 $StaticDir = "$ProjectRoot\.next\static"
 $PublicDir = "$ProjectRoot\public"
 
@@ -23,7 +23,7 @@ Copy-Item "$StaticDir\*" "$ReleaseDir\.next\static\" -Recurse -Force
 # 4. Copy Public Folder (Images, fonts)
 Write-Host "Copiando carpeta public..." -ForegroundColor Yellow
 if (Test-Path $PublicDir) {
-    Copy-Item "$PublicDir" "$ReleaseDir\" -Recurse -Force
+  Copy-Item "$PublicDir" "$ReleaseDir\" -Recurse -Force
 }
 
 # 5. Create a simple ecosystem.config.js (Optional, helpfull for PM2 commonly used in hosting)
