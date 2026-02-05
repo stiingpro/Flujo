@@ -18,15 +18,9 @@ import { TransactionType, TransactionStatus, CategoryLevel, PersonalSublevel, MO
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
-import { motion, AnimatePresence } from 'framer-motion';
 import { FocusMode } from './FocusToggle';
 
-// --- ANIMATION VARIANTS ---
-const rowVariants = {
-    hidden: { opacity: 0, height: 0, transition: { duration: 0.2 } },
-    visible: { opacity: 1, height: 'auto', transition: { duration: 0.3 } },
-    exit: { opacity: 0, height: 0, transition: { duration: 0.2 } }
-};
+// --- TYPES ---
 
 // --- TYPES ---
 interface SmartMonthTableProps {
@@ -273,12 +267,8 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
         }, 0);
 
         return (
-            <motion.tr
+            <tr
                 key={item.name}
-                variants={rowVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
                 className="group hover:bg-muted/30 transition-colors border-b border-gray-50"
             >
                 <td className="sticky left-0 z-20 bg-background/95 backdrop-blur group-hover:bg-gray-50/90 py-2 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
@@ -363,7 +353,7 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                 <td className="px-4 py-2 text-right font-bold text-sm bg-gray-50/50 min-w-[100px]">
                     {formatCurrency(rowTotal)}
                 </td>
-            </motion.tr>
+            </tr>
         );
     };
 
@@ -396,114 +386,102 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                         </tr>
                     </thead>
 
-                    {/* Animate Presence for Focus Mode Filtering */}
+                    {/* Standard Table Body without Animations */}
                     <tbody className="bg-white divide-y divide-gray-100">
-                        <AnimatePresence mode='popLayout'>
-                            {/* PERSONAL SECTION */}
-                            {showPersonal && Object.keys(groupedData.personalBySubLevel).map((sublevel) => {
-                                const items = groupedData.personalBySubLevel[sublevel as PersonalSublevel];
-                                if (items.length === 0) return null;
+                        {/* PERSONAL SECTION */}
+                        {showPersonal && Object.keys(groupedData.personalBySubLevel).map((sublevel) => {
+                            const items = groupedData.personalBySubLevel[sublevel as PersonalSublevel];
+                            if (items.length === 0) return null;
 
-                                return (
-                                    <片 key={sublevel}>
-                                        {/* Sublevel Header */}
-                                        <motion.tr
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            className="bg-purple-50/30"
-                                        >
-                                            <td className="sticky left-0 bg-purple-50/30 z-20 py-1.5 pl-4 flex items-center gap-2 border-r font-semibold text-xs text-purple-800 uppercase tracking-widest">
-                                                {SUBLEVEL_LABELS[sublevel as PersonalSublevel]}
-                                            </td>
-                                            <td colSpan={13} />
-                                        </motion.tr>
-                                        {items.map(item => renderRow(item, 'personal', sublevel))}
-                                    </片>
-                                );
-                            })}
-
-                            {/* COMPANY SECTION */}
-                            {showCompany && groupedData.empresa.length > 0 && (
-                                <>
-                                    <motion.tr
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className="bg-blue-50/30 border-t-2 border-blue-100/50"
-                                    >
-                                        <td className="sticky left-0 bg-blue-50/30 z-20 py-2 pl-4 flex items-center gap-2 border-r font-bold text-xs text-blue-800 uppercase tracking-widest">
-                                            <Building2 className="w-3 h-3" />
-                                            EMPRESA
+                            return (
+                                <片 key={sublevel}>
+                                    {/* Sublevel Header */}
+                                    <tr className="bg-purple-50/30">
+                                        <td className="sticky left-0 bg-purple-50/30 z-20 py-1.5 pl-4 flex items-center gap-2 border-r font-semibold text-xs text-purple-800 uppercase tracking-widest">
+                                            {SUBLEVEL_LABELS[sublevel as PersonalSublevel]}
                                         </td>
                                         <td colSpan={13} />
-                                    </motion.tr>
-                                    {groupedData.empresa.map(item => renderRow(item, 'empresa'))}
-                                </>
-                            )}
+                                    </tr>
+                                    {items.map(item => renderRow(item, 'personal', sublevel))}
+                                </片>
+                            );
+                        })}
 
-                            {!data.size && (
-                                <TableRow>
-                                    <TableCell colSpan={14} className="h-40 text-center text-muted-foreground">
-                                        Sin movimientos para {filters.year}.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                            {/* Grand Total Row */}
-                            {data.size > 0 && (
-                                <TableRow className="sticky bottom-0 z-40 bg-gray-100 border-t-2 border-gray-300 shadow-md font-bold">
-                                    <TableCell className="sticky left-0 z-50 bg-gray-100 font-bold text-gray-800 text-xs py-3 pl-4 uppercase tracking-wider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                                        TOTAL
-                                    </TableCell>
-                                    {MONTH_NAMES.map((_, index) => {
-                                        const month = index + 1;
-                                        // Calculate total for this month across ALL categories
-                                        const monthTotal = Array.from(data.entries()).reduce((sum, [catName, monthsMap]) => {
+                        {/* COMPANY SECTION */}
+                        {showCompany && groupedData.empresa.length > 0 && (
+                            <>
+                                <tr className="bg-blue-50/30 border-t-2 border-blue-100/50">
+                                    <td className="sticky left-0 bg-blue-50/30 z-20 py-2 pl-4 flex items-center gap-2 border-r font-bold text-xs text-blue-800 uppercase tracking-widest">
+                                        <Building2 className="w-3 h-3" />
+                                        EMPRESA
+                                    </td>
+                                    <td colSpan={13} />
+                                </tr>
+                                {groupedData.empresa.map(item => renderRow(item, 'empresa'))}
+                            </>
+                        )}
+
+                        {!data.size && (
+                            <TableRow>
+                                <TableCell colSpan={14} className="h-40 text-center text-muted-foreground">
+                                    Sin movimientos para {filters.year}.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {/* Grand Total Row */}
+                        {data.size > 0 && (
+                            <TableRow className="sticky bottom-0 z-40 bg-gray-100 border-t-2 border-gray-300 shadow-md font-bold">
+                                <TableCell className="sticky left-0 z-50 bg-gray-100 font-bold text-gray-800 text-xs py-3 pl-4 uppercase tracking-wider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                    TOTAL
+                                </TableCell>
+                                {MONTH_NAMES.map((_, index) => {
+                                    const month = index + 1;
+                                    // Calculate total for this month across ALL categories
+                                    const monthTotal = Array.from(data.entries()).reduce((sum, [catName, monthsMap]) => {
+                                        // Check visibility
+                                        const isPersonal = Object.values(groupedData.personalBySubLevel).some(group => group.some(i => i.name === catName));
+                                        const isCompany = groupedData.empresa.some(i => i.name === catName);
+
+                                        if ((isPersonal && !showPersonal) || (isCompany && !showCompany)) {
+                                            return sum;
+                                        }
+
+                                        const cell = monthsMap.get(month);
+                                        if (cell && (filters.showProjected || cell.status === 'real')) {
+                                            return sum + cell.amount;
+                                        }
+                                        return sum;
+                                    }, 0);
+
+                                    return (
+                                        <TableCell key={month} className="text-right px-4 py-3 text-gray-900 min-w-[110px]">
+                                            {formatCurrency(monthTotal)}
+                                        </TableCell>
+                                    );
+                                })}
+                                <TableCell className="text-right px-4 py-3 text-gray-900 bg-gray-200/50 min-w-[100px]">
+                                    {/* Grand Total of Totals */}
+                                    {formatCurrency(
+                                        Array.from(data.entries()).reduce((totalSum, [catName, monthsMap]) => {
                                             // Check visibility
                                             const isPersonal = Object.values(groupedData.personalBySubLevel).some(group => group.some(i => i.name === catName));
                                             const isCompany = groupedData.empresa.some(i => i.name === catName);
 
                                             if ((isPersonal && !showPersonal) || (isCompany && !showCompany)) {
-                                                return sum;
+                                                return totalSum;
                                             }
 
-                                            const cell = monthsMap.get(month);
-                                            if (cell && (filters.showProjected || cell.status === 'real')) {
-                                                return sum + cell.amount;
-                                            }
-                                            return sum;
-                                        }, 0);
-
-                                        return (
-                                            <TableCell key={month} className="text-right px-4 py-3 text-gray-900 min-w-[110px]">
-                                                {formatCurrency(monthTotal)}
-                                            </TableCell>
-                                        );
-                                    })}
-                                    <TableCell className="text-right px-4 py-3 text-gray-900 bg-gray-200/50 min-w-[100px]">
-                                        {/* Grand Total of Totals */}
-                                        {formatCurrency(
-                                            Array.from(data.entries()).reduce((totalSum, [catName, monthsMap]) => {
-                                                // Check visibility
-                                                const isPersonal = Object.values(groupedData.personalBySubLevel).some(group => group.some(i => i.name === catName));
-                                                const isCompany = groupedData.empresa.some(i => i.name === catName);
-
-                                                if ((isPersonal && !showPersonal) || (isCompany && !showCompany)) {
-                                                    return totalSum;
+                                            return totalSum + Array.from(monthsMap.values()).reduce((mSum, cell) => {
+                                                if (filters.showProjected || cell.status === 'real') {
+                                                    return mSum + cell.amount;
                                                 }
-
-                                                return totalSum + Array.from(monthsMap.values()).reduce((mSum, cell) => {
-                                                    if (filters.showProjected || cell.status === 'real') {
-                                                        return mSum + cell.amount;
-                                                    }
-                                                    return mSum;
-                                                }, 0);
-                                            }, 0)
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </AnimatePresence>
+                                                return mSum;
+                                            }, 0);
+                                        }, 0)
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </tbody>
                 </table>
             </div>

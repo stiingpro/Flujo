@@ -26,15 +26,16 @@ export function DashboardV2() {
     const { transactions, filters, setFilters, categories } = useFinanceStore(); // Get categories
     const { isPro } = useFeatureMode();
 
-    // Sync FocusMode with Global Store Filters
-    useEffect(() => {
+    // Unified Handler for Focus Mode
+    const handleFocusChange = (mode: FocusMode) => {
+        setFocusMode(mode);
         const originMap: Record<FocusMode, 'all' | 'business' | 'personal'> = {
             'all': 'all',
             'company': 'business',
             'personal': 'personal'
         };
-        setFilters({ origin: originMap[focusMode] });
-    }, [focusMode, setFilters]);
+        setFilters({ origin: originMap[mode] });
+    };
 
     // Reset Investor Mode
     useEffect(() => {
@@ -157,7 +158,7 @@ export function DashboardV2() {
                     <div className="flex bg-muted/30 p-1 rounded-lg border items-center gap-2">
                         <InvestorToggle isInvestorMode={isInvestorMode} onToggle={() => setIsInvestorMode(!isInvestorMode)} />
                         <div className="w-px h-6 bg-border mx-1" />
-                        <FocusToggle value={focusMode} onChange={setFocusMode} />
+                        <FocusToggle value={focusMode} onChange={handleFocusChange} />
                     </div>
                 </div>
             </div>
