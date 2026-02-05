@@ -117,7 +117,15 @@ export async function parseExcelBuffer(buffer: ArrayBuffer): Promise<{ rows: Imp
     }
 
     if (headerRowIndex === -1) {
-        throw new Error("No se pudo detectar la fila de cabecera con los meses (Ene, Feb, Mar...).");
+        console.warn("Smart detection failed. Falling back to standard layout (Row 0 header, Cols 1-12 months).");
+        // Fallback: Assume Row 0 is header (or just data starts after it)
+        // Assume Columns 1-12 are Jan-Dec
+        headerRowIndex = 0;
+        categoryColIndex = 0;
+        monthColIndices = {
+            1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6,
+            7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12
+        };
     }
 
     // Process rows below header
