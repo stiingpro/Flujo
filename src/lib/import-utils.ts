@@ -3,10 +3,17 @@ import { TransactionType, Transaction, TransactionStatus, TransactionOrigin } fr
 
 // Standardize Month Names to detect columns
 const MONTH_MAP: Record<string, number> = {
+    // Spanish Short
     'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4, 'may': 5, 'jun': 6,
     'jul': 7, 'ago': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12,
+    // Spanish Full
     'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
-    'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+    'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+    // English Short
+    'jan': 1, 'apr': 4, 'aug': 8, 'dec': 12,
+    // English Full
+    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'june': 6,
+    'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
 };
 
 export interface ImportedRow {
@@ -65,18 +72,32 @@ export async function parseExcelBuffer(buffer: ArrayBuffer): Promise<{ rows: Imp
     // Heuristic: Find the header row (contains "ENERO" or "ENE")
     let headerRowIndex = -1;
     let monthColIndices: Record<number, number> = {}; // Month (1-12) -> Column Index
+    let categoryColIndex = 0; // Default to column 0
 
+    // Scan first 20 rows for a header
     for (let i = 0; i < Math.min(20, data.length); i++) {
         const row = data[i];
-        let foundMonth = false;
+        let monthsFoundCount = 0;
+        let tempMonthIndices: Record<number, number> = {};
+        let tempCategoryIndex = -1;
 
         row.forEach((cell: any, colIdx: number) => {
             if (typeof cell === 'string') {
-                const cleanCell = cell.toLowerCase().trim().substring(0, 3);
-                if (MONTH_MAP[cleanCell]) {
-                    monthColIndices[MONTH_MAP[cleanCell]] = colIdx;
-                    foundMonth = true;
+                const cleanCell = cell.toLowerCase().trim();
+                const shortCell = cleanCell.substring(0, 3);
+
+                // Check if it is a month
+                if (MONTH_MAP[cleanCell] || MONTH_MAP[shortCell]) {
+                    const monthNum = MONTH_MAP[cleanCell] || MONTH_MAP[shortCell];
+                    tempMonthIndices[monthNum] = colIdx;
+                    monthsFoundCount++;
                 }
+
+                // Check if it is the Category Header
+                if (['categoría', 'categoria', 'category', 'concepto', 'descripción', 'descripcion', 'item', 'nombre'].includes(cleanCell)) {
+                    tempCategoryIndex = colIdx;
+                }
+
                 // Try to detect year in header row or nearby (e.g. "2024")
                 if (cell.match(/20\d{2}/)) {
                     const match = cell.match(/20\d{2}/);
@@ -85,8 +106,12 @@ export async function parseExcelBuffer(buffer: ArrayBuffer): Promise<{ rows: Imp
             }
         });
 
-        if (foundMonth) {
+        // Require at least 2 months to confirm this is the header row
+        // Or 1 month if it explicitly says "Enero" (less robust but ok)
+        if (monthsFoundCount >= 2) {
             headerRowIndex = i;
+            monthColIndices = tempMonthIndices;
+            if (tempCategoryIndex !== -1) categoryColIndex = tempCategoryIndex;
             break;
         }
     }
@@ -103,7 +128,12 @@ export async function parseExcelBuffer(buffer: ArrayBuffer): Promise<{ rows: Imp
     // Scan for section headers first to map ranges if needed, or do single pass state machine
     for (let i = headerRowIndex + 1; i < data.length; i++) {
         const row = data[i];
-        const firstCell = row[0]?.toString().trim().toUpperCase() || '';
+        // Use the detected category column
+        const categoryCellRaw = row[categoryColIndex];
+        const categoryCell = categoryCellRaw?.toString().trim().toUpperCase() || '';
+
+        // Also check first column just in case "INGRESOS" / "GASTOS" headers are separate from the category column
+        const firstColCell = row[0]?.toString().trim().toUpperCase() || '';
 
         // skip empty rows if no data in month columns
         const hasData = Object.values(monthColIndices).some(idx => {
@@ -111,21 +141,27 @@ export async function parseExcelBuffer(buffer: ArrayBuffer): Promise<{ rows: Imp
             return typeof val === 'number' || (typeof val === 'string' && val.trim() !== '');
         });
 
-        if (!hasData && !firstCell) continue;
+        if (!hasData && !categoryCell && !firstColCell) continue;
 
-        // Detect Logic Block Switches
-        if (firstCell.includes('INGRESO')) {
-            currentType = 'income';
-            continue; // Skip the header row itself
-        }
-        if (firstCell.includes('GASTO') || firstCell.includes('EGRESO')) {
-            currentType = 'expense';
-            continue;
+        // Detect Logic Block Switches (These usually appear in the first column or category column)
+        const checkHeader = (txt: string) => txt.includes('INGRESO') || txt.includes('GASTO') || txt.includes('EGRESO');
+
+        if (checkHeader(firstColCell) || checkHeader(categoryCell)) {
+            const txt = checkHeader(firstColCell) ? firstColCell : categoryCell;
+            if (txt.includes('INGRESO')) {
+                currentType = 'income';
+                continue;
+            }
+            if (txt.includes('GASTO') || txt.includes('EGRESO')) {
+                currentType = 'expense';
+                continue;
+            }
         }
 
         // It's a data row
-        const categoryName = firstCell;
+        const categoryName = categoryCell;
         if (!categoryName) continue; // Skip if no category name
+        if (checkHeader(categoryName)) continue; // Safety skip if it wasn't caught above
 
         // Iterate Month Columns
         for (const [month, colIdx] of Object.entries(monthColIndices)) {
