@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Edit2, User, Building2, ChevronRight } from 'lucide-react';
+import { Check, X, Edit2, User, Building2, ChevronRight, Trash2 } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { TransactionType, TransactionStatus, CategoryLevel, PersonalSublevel, MONTH_NAMES, SUBLEVEL_COLORS, SUBLEVEL_LABELS } from '@/types';
 import { cn } from '@/lib/utils';
@@ -58,7 +58,7 @@ const LEVEL_COLORS = {
 
 export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps) {
     const { getCategoryMonthlyData, transactions, filters, categories } = useFinanceStore();
-    const { updateTransactionAndSync, addTransactionAndSync } = useSupabaseSync();
+    const { updateTransactionAndSync, addTransactionAndSync, removeCategoryByName } = useSupabaseSync();
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
     const [editValue, setEditValue] = useState<string>('');
 
@@ -269,11 +269,27 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                 className="group hover:bg-muted/30 transition-colors border-b border-gray-50"
             >
                 <td className="sticky left-0 z-20 bg-background/95 backdrop-blur group-hover:bg-gray-50/90 py-2 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                    <div className="flex items-center gap-2 pl-4 pr-3">
-                        <div className={cn("w-1 h-6 rounded-full", sublevel ? SUBLEVEL_COLORS[sublevel as PersonalSublevel] : (level === 'personal' ? 'bg-purple-300' : 'bg-blue-400'))} />
-                        <span className="font-medium text-sm text-gray-700 truncate max-w-[140px]" title={item.name}>
-                            {item.name}
-                        </span>
+                    <div className="flex items-center gap-2 pl-4 pr-3 justify-between group/cell relative">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <div className={cn("w-1 h-6 rounded-full shrink-0", sublevel ? SUBLEVEL_COLORS[sublevel as PersonalSublevel] : (level === 'personal' ? 'bg-purple-300' : 'bg-blue-400'))} />
+                            <span className="font-medium text-sm text-gray-700 truncate max-w-[140px]" title={item.name}>
+                                {item.name}
+                            </span>
+                        </div>
+
+                        {/* Delete Action */}
+                        <button
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`¿Estás seguro de eliminar la categoría "${item.name}" y todos sus movimientos?`)) {
+                                    await removeCategoryByName(item.name);
+                                }
+                            }}
+                            className="opacity-0 group-hover/cell:opacity-100 hover:text-red-600 transition-opacity p-1"
+                            title="Eliminar categoría"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 </td>
                 {MONTH_NAMES.map((_, index) => {

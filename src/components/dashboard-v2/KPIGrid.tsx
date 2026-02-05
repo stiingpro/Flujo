@@ -22,36 +22,55 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
 
     return (
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${isPro ? '4' : '3'} gap-4 mb-6`}>
-            {/* Runway Card (Oxígeno) */}
-            <Card className={cn(
-                "border-l-4 shadow-sm relative overflow-hidden group transition-all",
-                metrics.runway >= 6 ? "bg-emerald-50 border-l-emerald-500" :
-                    metrics.runway >= 3 ? "bg-yellow-50 border-l-yellow-500" :
-                        "bg-red-50 border-l-red-500"
-            )}>
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Wallet className={cn(
-                        "w-24 h-24",
-                        metrics.runway >= 6 ? "text-emerald-600" :
-                            metrics.runway >= 3 ? "text-yellow-600" :
-                                "text-red-600"
-                    )} />
-                </div>
-                <CardContent className="p-6">
-                    <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-gray-600">Oxígeno (Runway)</span>
+            {/* Runway Card (Oxígeno) with Velocimeter */}
+            <Card className="relative overflow-hidden group transition-all bg-white border shadow-sm">
+                <CardContent className="p-6 flex items-center justify-between">
+                    <div className="flex flex-col gap-1 z-10">
+                        <span className="text-sm font-medium text-gray-500">Oxígeno (Runway)</span>
                         <div className="flex items-baseline gap-2">
                             <span className={cn(
                                 "text-4xl font-bold",
-                                metrics.runway >= 6 ? "text-emerald-700" :
-                                    metrics.runway >= 3 ? "text-yellow-700" :
-                                        "text-red-700"
+                                metrics.runway >= 6 ? "text-emerald-600" :
+                                    metrics.runway >= 3 ? "text-yellow-600" :
+                                        "text-rose-600"
                             )}>{metrics.runway.toFixed(1)}</span>
-                            <span className="text-sm font-medium text-gray-600">meses</span>
+                            <span className="text-sm font-medium text-gray-500">meses</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                            {metrics.runway < 3 ? "¡Atención! Oxígeno crítico." : "Salud financiera estable."}
+                        <p className="text-xs text-gray-400 mt-2 max-w-[120px]">
+                            {metrics.runway < 3 ? "Nivel Crítico" : "Nivel Saludable"}
                         </p>
+                    </div>
+
+                    {/* Velocimeter Gauge */}
+                    <div className="relative w-24 h-24 shrink-0">
+                        {/* Gauge Background (Half Circle) */}
+                        <svg viewBox="0 0 100 60" className="w-full h-full overflow-visible">
+                            {/* Arc Background */}
+                            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#f1f5f9" strokeWidth="8" strokeLinecap="round" />
+
+                            {/* Colorful Segments */}
+                            {/* Red (0-3) */}
+                            <path d="M 10 50 A 40 40 0 0 1 30 15.3" fill="none" stroke="#f43f5e" strokeWidth="8" strokeLinecap="round" opacity="0.2" /> {/* ~0 to 30% */}
+                            {/* Yellow (3-6) */}
+                            <path d="M 30 15.3 A 40 40 0 0 1 70 15.3" fill="none" stroke="#eab308" strokeWidth="8" opacity="0.2" />
+                            {/* Green (6+) */}
+                            <path d="M 70 15.3 A 40 40 0 0 1 90 50" fill="none" stroke="#10b981" strokeWidth="8" strokeLinecap="round" opacity="0.2" />
+
+                            {/* Needle */}
+                            <g style={{
+                                transformOrigin: '50px 50px',
+                                transform: `rotate(${Math.max(0, Math.min(180, (metrics.runway / 6) * 180)) - 180}deg)`,
+                                transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}>
+                                <line x1="50" y1="50" x2="10" y2="50" stroke="#1e293b" strokeWidth="3" strokeLinecap="round" />
+                                <circle cx="50" cy="50" r="4" fill="#1e293b" />
+                            </g>
+                        </svg>
+                        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[8px] text-gray-400 px-1 -mb-1">
+                            <span>0m</span>
+                            <span>3m</span>
+                            <span>6m+</span>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
