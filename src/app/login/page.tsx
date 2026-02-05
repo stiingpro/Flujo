@@ -114,7 +114,7 @@ export default function LoginPage() {
                             </div>
                             <div className="text-left">
                                 <h1 className="text-3xl font-bold bg-clip-text text-slate-800 tracking-tight uppercase">
-                                    FLUJOEXPERT
+                                    RADAR FINANCIERO
                                 </h1>
                             </div>
                         </div>
@@ -201,7 +201,11 @@ export default function LoginPage() {
                                         const { error } = await supabase.auth.signInWithOAuth({
                                             provider: 'google',
                                             options: {
-                                                redirectTo: `${window.location.origin}/auth/callback`
+                                                redirectTo: `${window.location.origin}/auth/callback`,
+                                                queryParams: {
+                                                    access_type: 'offline',
+                                                    prompt: 'consent',
+                                                }
                                             }
                                         });
                                         if (error) {
