@@ -45,6 +45,7 @@ import { ProfileSettingsDialog } from '@/components/profile/ProfileSettingsDialo
 import { CompanyBranding } from '@/components/profile/CompanyBranding';
 import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 import { DashboardV2 } from '@/components/dashboard-v2/DashboardV2';
+import { FormatDataButton } from '@/components/settings/FormatDataButton';
 
 export default function DashboardPage() {
   const { filters, setFilters, toggleProjectedMode, transactions, isLoading, profile } = useFinanceStore();
@@ -108,6 +109,9 @@ export default function DashboardPage() {
               <ImportWizardModal />
               <TransactionForm />
               <CategoryManager />
+              <div className="mx-1 text-border">|</div>
+              <FormatDataButton />
+              <div className="mx-1 text-border">|</div>
               <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>

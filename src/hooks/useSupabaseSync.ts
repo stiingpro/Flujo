@@ -451,6 +451,38 @@ export function useSupabaseSync() {
         }
     }, [user, transactions, addTransaction, deleteTransaction, addToHistory]);
 
+    // Reset Account (Factory Reset)
+    const resetAccount = useCallback(async (): Promise<boolean> => {
+        if (!user) return false;
+
+        try {
+            console.log('[Sync] Initiating Factory Reset...');
+
+            // 1. Call RPC
+            const { error } = await supabase.rpc('reset_user_data');
+
+            if (error) throw error;
+
+            // 2. Clear Local Store
+            setTransactions([]);
+            setCategories([]);
+
+            console.log('[Sync] Account reset successful.');
+            return true;
+        } catch (error: any) {
+            console.error('[Sync] Error resetting account:', error);
+
+            // Fallback: If RPC fails (e.g. doesn't exist yet), try manual delete? 
+            // Better to just fail safe and ask user to contact support or run migration.
+            if (error.message?.includes('function') && error.message?.includes('does not exist')) {
+                toast.error('Error crítico: Función de reseteo no encontrada en base de datos.');
+            } else {
+                toast.error('Error al formatear: ' + error.message);
+            }
+            return false;
+        }
+    }, [user, setTransactions, setCategories]);
+
     return {
         loadFromSupabase,
         syncTransaction,
@@ -463,6 +495,7 @@ export function useSupabaseSync() {
         addTransactionAndSync, // Export new helper
         updateTransactionAndSync, // Export new helper
         deleteTransactionAndSync, // Export new helper
+        resetAccount, // New Helper
         isLoaded: loadedForUserId === user?.id,
         isSyncing,
     };

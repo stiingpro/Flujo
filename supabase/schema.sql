@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS transactions (
   status VARCHAR(10) NOT NULL CHECK (status IN ('real', 'projected')) DEFAULT 'projected',
   "paymentStatus" VARCHAR(20) DEFAULT 'pending' CHECK ("paymentStatus" IN ('confirmed', 'pending')),
   origin VARCHAR(10) NOT NULL CHECK (origin IN ('business', 'personal')) DEFAULT 'business',
+  currency_code VARCHAR(3) DEFAULT 'CLP',
+  exchange_rate DECIMAL(10,2) DEFAULT 1.0,
   installment JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
