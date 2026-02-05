@@ -49,7 +49,7 @@ export function TransactionForm() {
     const [open, setOpen] = useState(false);
     const { addTransaction, addCategory, categories } = useFinanceStore();
     const { user } = useAuth();
-    const { syncTransaction, syncCategory } = useSupabaseSync();
+    const { syncTransaction, syncCategory, addTransactionAndSync } = useSupabaseSync();
     const { isPro } = useFeatureMode();
 
     const [formData, setFormData] = useState<TransactionFormData>({
@@ -137,6 +137,9 @@ export function TransactionForm() {
             categoryRef = categories.find(c => c.id === formData.category_id);
         }
 
+        // CORRECT ORIGIN LOGIC: Derive from category level (Hoisted for both single and installments)
+        const finalOrigin = (categoryRef?.level === 'personal' ? 'personal' : 'business') as TransactionOrigin;
+
         // If installment, create multiple transactions
         if (formData.isInstallment && formData.totalInstallments && formData.totalInstallments > 1) {
             const baseDate = new Date(formData.date);
@@ -159,7 +162,7 @@ export function TransactionForm() {
                     type: formData.type,
                     status: formData.status,
                     paymentStatus: i === 0 ? formData.paymentStatus : 'pending' as PaymentStatus,
-                    origin: formData.origin,
+                    origin: finalOrigin, // Use derived origin
                     installment: {
                         isInstallment: true,
                         totalInstallments: formData.totalInstallments,
@@ -176,7 +179,8 @@ export function TransactionForm() {
                     category: categoryRef,
                 };
 
-                addTransaction(transaction);
+                // Use robust helper
+                addTransactionAndSync(transaction);
 
                 // FEATURE TOGGLE: Alerts (Pro Mode)
                 if (isPro && transaction.amount > 200000 && transaction.type === 'expense') {
@@ -184,8 +188,6 @@ export function TransactionForm() {
                         description: `El monto de $${transaction.amount.toLocaleString()} supera el umbral de monitoreo.`
                     });
                 }
-
-                syncTransaction(transaction); // Sync to Supabase
             }
         } else {
             // Single transaction
@@ -199,7 +201,7 @@ export function TransactionForm() {
                 type: formData.type,
                 status: formData.status,
                 paymentStatus: formData.paymentStatus,
-                origin: formData.origin,
+                origin: finalOrigin, // Use derived origin
                 currency_code: formData.currency_code,
                 exchange_rate: formData.exchange_rate,
                 created_at: new Date().toISOString(),
@@ -208,7 +210,8 @@ export function TransactionForm() {
                 category: categoryRef,
             };
 
-            addTransaction(newTransaction);
+            // Use robust helper that handles Optimistic Update + History + DB Sync + Rollback
+            addTransactionAndSync(newTransaction);
 
             // FEATURE TOGGLE: Alerts (Pro Mode)
             if (isPro && newTransaction.amount > 200000 && newTransaction.type === 'expense') {
@@ -216,8 +219,6 @@ export function TransactionForm() {
                     description: `El monto de $${newTransaction.amount.toLocaleString()} supera el umbral de monitoreo.`
                 });
             }
-
-            syncTransaction(newTransaction); // Sync to Supabase
         }
 
         // Reset form
