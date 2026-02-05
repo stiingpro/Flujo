@@ -19,7 +19,7 @@ export function PDFExportButton() {
         return (
             <Button variant="outline" disabled className="gap-2">
                 <FileText className="h-4 w-4" />
-                PDF
+                Reporte PDF
             </Button>
         );
     }
