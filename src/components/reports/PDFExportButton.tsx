@@ -43,8 +43,8 @@ export function PDFExportButton() {
         >
             {({ blob, url, loading, error }) => (
                 <Button variant="outline" disabled={loading} className="gap-2">
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                    {loading ? 'Generando PDF...' : 'Reporte PDF'}
+                    <FileText className="h-4 w-4" />
+                    Reporte PDF
                 </Button>
             )}
         </PDFDownloadLink>
