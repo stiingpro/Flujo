@@ -56,10 +56,11 @@ const LEVEL_COLORS = {
     },
 };
 
+import { calculateCategoryMonthlyData } from '@/lib/financialCalculations'; // Import raw calculator
 import { useProjectData } from '@/hooks/useProjectData';
 
 export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps) {
-    const { getCategoryMonthlyData, transactions, filters, categories, isSimulationMode } = useProjectData();
+    const { transactions, filters, categories, isSimulationMode } = useProjectData(); // Removed getCategoryMonthlyData
 
     const { updateTransactionAndSync, addTransactionAndSync, removeCategoryByName, renameCategory } = useSupabaseSync();
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
@@ -72,9 +73,15 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const currentMonthRef = useRef<HTMLTableCellElement>(null);
 
-    // Data processing
-    const expenseData = getCategoryMonthlyData('expense');
-    const incomeData = getCategoryMonthlyData('income');
+    // Data processing - Explicit calculation to force reactivity on filter change
+    const expenseData = useMemo(() =>
+        calculateCategoryMonthlyData(transactions, categories, filters, 'expense'),
+        [transactions, categories, filters]);
+
+    const incomeData = useMemo(() =>
+        calculateCategoryMonthlyData(transactions, categories, filters, 'income'),
+        [transactions, categories, filters]);
+
     const data = filterType === 'expense' ? expenseData : incomeData;
     const currentMonthIndex = new Date().getMonth(); // 0-11
 
