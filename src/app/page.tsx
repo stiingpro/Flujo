@@ -172,7 +172,7 @@ export default function DashboardPage() {
                 onCheckedChange={toggleProjectedMode}
               />
               <Badge variant={filters.showProjected ? 'default' : 'secondary'}>
-                {filters.showProjected ? 'Proyectado + Real' : 'Solo Confirmado'}
+                {filters.showProjected ? 'Confirmado + Proyectado' : 'Solo Confirmado'}
               </Badge>
             </div>
           </div>
