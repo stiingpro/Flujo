@@ -2,7 +2,7 @@
 import { Transaction, Category, DashboardFilters, MonthlyData, CategoryLevel, TransactionType, TransactionStatus, MONTH_NAMES } from '@/types';
 
 // Helper to determine the effective origin of a transaction based on its category
-function resolveOrigin(t: Transaction, categories: Category[]): string {
+export function resolveOrigin(t: Transaction, categories: Category[]): string {
     // If the transaction has a category object attached, use it
     if (t.category) {
         return t.category.level === 'personal' ? 'personal' : 'business';

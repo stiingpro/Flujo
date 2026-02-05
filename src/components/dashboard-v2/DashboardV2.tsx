@@ -17,11 +17,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingDown, TrendingUp, Sparkles, Filter, Bot } from 'lucide-react';
 import { Toaster } from 'sonner';
 
+import { resolveOrigin } from '@/lib/financialCalculations'; // Import helper
+
 export function DashboardV2() {
     const [focusMode, setFocusMode] = useState<FocusMode>('all');
     const [isInvestorMode, setIsInvestorMode] = useState(false);
     const [activeTab, setActiveTab] = useState<'gastos' | 'ingresos'>('gastos');
-    const { transactions, filters, setFilters } = useFinanceStore();
+    const { transactions, filters, setFilters, categories } = useFinanceStore(); // Get categories
     const { isPro } = useFeatureMode();
 
     // Sync FocusMode with Global Store Filters
@@ -44,8 +46,10 @@ export function DashboardV2() {
     const calculateMetrics = () => {
         // 1. Filter Transactions based on View Mode
         const relevantTransactions = transactions.filter(t => {
-            if (focusMode === 'company' && t.origin !== 'business') return false;
-            if (focusMode === 'personal' && t.origin !== 'personal') return false;
+            const effectiveOrigin = resolveOrigin(t, categories); // Use resolved origin
+
+            if (focusMode === 'company' && effectiveOrigin !== 'business') return false;
+            if (focusMode === 'personal' && effectiveOrigin !== 'personal') return false;
             return true;
         });
 
