@@ -4,6 +4,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useProjectData } from '@/hooks/useProjectData'; // Reuse centralized hook
 import { calculateCategoryMonthlyData } from '@/lib/financialCalculations';
+import { useFinancialMetrics } from '@/hooks/useFinancialMetrics';
 import { MONTH_NAMES } from '@/types';
 import { cn } from '@/lib/utils';
 import { FocusMode } from './FocusToggle';
@@ -13,7 +14,7 @@ interface SummaryTableProps {
 }
 
 export function SummaryTable({ focusMode }: SummaryTableProps) {
-    const { transactions, filters, categories } = useProjectData();
+    const { monthlyData } = useFinancialMetrics(focusMode);
     const currentMonthIndex = new Date().getMonth();
     const currentMonthRef = useRef<HTMLTableCellElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -31,62 +32,6 @@ export function SummaryTable({ focusMode }: SummaryTableProps) {
         }
     }, []);
 
-    // 1. Calculate Monthly Net Flow directly
-    const monthlyData = useMemo(() => {
-        // We calculate Income and Expense separately using the robust calculator
-        const incomeMap = calculateCategoryMonthlyData(transactions, categories, filters, 'income');
-        const expenseMap = calculateCategoryMonthlyData(transactions, categories, filters, 'expense');
-
-        // We need to aggregate ALL categories into a single monthly total
-        // But respecting the focusMode (Personal vs Company)
-
-        // Helper to check if a category name belongs to the current Focus Mode
-        // This mirrors the logic in SmartMonthTable but simplified since we just need totals
-        const isVisible = (categoryName: string, type: 'income' | 'expense') => {
-            const category = categories.find(c => c.name === categoryName && c.type === type);
-            if (!category) return true; // Fallback
-
-            const level = category.level || 'empresa'; // default
-
-            if (focusMode === 'all') return true;
-            if (focusMode === 'company' && level === 'empresa') return true;
-            if (focusMode === 'personal' && level === 'personal') return true;
-
-            return false;
-        };
-
-        const result = new Map<number, number>();
-
-        // Initialize months
-        for (let i = 1; i <= 12; i++) {
-            result.set(i, 0);
-        }
-
-        // Sum Income
-        incomeMap.forEach((months, catName) => {
-            if (!isVisible(catName, 'income')) return;
-            months.forEach((cell, month) => {
-                if (filters.showProjected || cell.status === 'real') {
-                    const current = result.get(month) || 0;
-                    result.set(month, current + cell.amount);
-                }
-            });
-        });
-
-        // Subtract Expenses
-        expenseMap.forEach((months, catName) => {
-            if (!isVisible(catName, 'expense')) return;
-            months.forEach((cell, month) => {
-                if (filters.showProjected || cell.status === 'real') {
-                    const current = result.get(month) || 0;
-                    result.set(month, current - cell.amount);
-                }
-            });
-        });
-
-        return result;
-    }, [transactions, categories, filters, focusMode]);
-
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('es-CL', {
             style: 'currency',
@@ -96,8 +41,12 @@ export function SummaryTable({ focusMode }: SummaryTableProps) {
         }).format(val);
     };
 
-    // Calculate Grand Total (Year Balance)
-    const yearTotal = Array.from(monthlyData.values()).reduce((a, b) => a + b, 0);
+    // Calculate Grand Total (Year Balance - Net)
+    const yearTotalNet = monthlyData.reduce((acc, m) => acc + m.net, 0);
+    // For Accumulated, the "Total" column usually shows the Final Ending Balance (Dec)? 
+    // Or sum of accumulated? Sum of accumulated makes no sense.
+    // The total of "Balance Acumulado" implies the position at end of year.
+    const finalAccumulated = monthlyData[monthlyData.length - 1]?.accumulated || 0;
 
     return (
         <div className="relative rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-border">
@@ -123,13 +72,15 @@ export function SummaryTable({ focusMode }: SummaryTableProps) {
                         </tr>
                     </thead>
                     <tbody className="bg-card divide-y divide-border">
+                        {/* Row 1: Net Flow (Balance Mensual) */}
                         <tr className="group hover:bg-muted/50 transition-colors">
                             <td className="sticky left-0 z-20 bg-background/95 backdrop-blur group-hover:bg-muted/90 py-4 pl-4 font-bold text-sm text-foreground border-r border-border">
                                 Balance Mensual
                             </td>
                             {MONTH_NAMES.map((_, index) => {
                                 const month = index + 1;
-                                const amount = monthlyData.get(month) || 0;
+                                const data = monthlyData.find(d => d.month === month);
+                                const amount = data?.net || 0;
                                 const isCurrent = index === currentMonthIndex;
                                 const isPositive = amount >= 0;
 
@@ -149,9 +100,43 @@ export function SummaryTable({ focusMode }: SummaryTableProps) {
                             })}
                             <td className={cn(
                                 "px-4 py-4 text-right font-bold font-mono-numbers text-sm bg-muted/30",
-                                yearTotal >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"
+                                yearTotalNet >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"
                             )}>
-                                {formatCurrency(yearTotal)}
+                                {formatCurrency(yearTotalNet)}
+                            </td>
+                        </tr>
+
+                        {/* Row 2: Accumulated Balance (Balance Acumulado) */}
+                        <tr className="group hover:bg-muted/50 transition-colors bg-muted/10">
+                            <td className="sticky left-0 z-20 bg-background/95 backdrop-blur group-hover:bg-muted/90 py-4 pl-4 font-bold text-sm text-foreground border-r border-border border-l-4 border-l-blue-500">
+                                Balance Acumulado
+                            </td>
+                            {MONTH_NAMES.map((_, index) => {
+                                const month = index + 1;
+                                const data = monthlyData.find(d => d.month === month);
+                                const amount = data?.accumulated || 0;
+                                const isCurrent = index === currentMonthIndex;
+                                const isPositive = amount >= 0;
+
+                                return (
+                                    <td
+                                        key={month}
+                                        className={cn(
+                                            "px-4 py-4 text-right font-mono-numbers text-sm border-t border-border/50",
+                                            isCurrent && "bg-blue-50/20 dark:bg-blue-900/10",
+                                            isPositive ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-rose-600 dark:text-rose-400 font-bold"
+                                        )}
+                                    >
+                                        {formatCurrency(amount)}
+                                    </td>
+                                );
+                            })}
+                            {/* For Accumulated, the Total Column could be skipped or show final. Let's show final. */}
+                            <td className={cn(
+                                "px-4 py-4 text-right font-bold font-mono-numbers text-sm bg-muted/30 border-t border-border/50",
+                                finalAccumulated >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"
+                            )}>
+                                {formatCurrency(finalAccumulated)}
                             </td>
                         </tr>
                     </tbody>
