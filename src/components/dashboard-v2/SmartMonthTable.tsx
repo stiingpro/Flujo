@@ -143,11 +143,11 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
         const newAmount = parseCurrency(editValue);
 
         const transaction = transactions.find((t) => {
-            const tDate = new Date(t.date);
+            const [tYear, tMonth] = t.date.split('-').map(Number);
             return (
                 (t.description === categoryName || t.category?.name === categoryName) &&
-                tDate.getFullYear() === filters.year &&
-                tDate.getMonth() + 1 === month &&
+                tYear === filters.year &&
+                tMonth === month &&
                 t.type === filterType
             );
         });
@@ -380,6 +380,44 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                                 <TableRow>
                                     <TableCell colSpan={14} className="h-40 text-center text-muted-foreground">
                                         Sin movimientos para {filters.year}.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {/* Grand Total Row */}
+                            {data.size > 0 && (
+                                <TableRow className="sticky bottom-0 z-40 bg-gray-100 border-t-2 border-gray-300 shadow-md font-bold">
+                                    <TableCell className="sticky left-0 z-50 bg-gray-100 font-bold text-gray-800 text-xs py-3 pl-4 uppercase tracking-wider shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                        TOTAL
+                                    </TableCell>
+                                    {MONTH_NAMES.map((_, index) => {
+                                        const month = index + 1;
+                                        // Calculate total for this month across ALL categories
+                                        const monthTotal = Array.from(data.values()).reduce((sum, monthsMap) => {
+                                            const cell = monthsMap.get(month);
+                                            if (cell && (filters.showProjected || cell.status === 'real')) {
+                                                return sum + cell.amount;
+                                            }
+                                            return sum;
+                                        }, 0);
+
+                                        return (
+                                            <TableCell key={month} className="text-right px-4 py-3 text-gray-900 min-w-[110px]">
+                                                {formatCurrency(monthTotal)}
+                                            </TableCell>
+                                        );
+                                    })}
+                                    <TableCell className="text-right px-4 py-3 text-gray-900 bg-gray-200/50 min-w-[100px]">
+                                        {/* Grand Total of Totals */}
+                                        {formatCurrency(
+                                            Array.from(data.values()).reduce((totalSum, monthsMap) => {
+                                                return totalSum + Array.from(monthsMap.values()).reduce((mSum, cell) => {
+                                                    if (filters.showProjected || cell.status === 'real') {
+                                                        return mSum + cell.amount;
+                                                    }
+                                                    return mSum;
+                                                }, 0);
+                                            }, 0)
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             )}

@@ -178,9 +178,9 @@ export const useFinanceStore = create<FinanceState>()(
 
                 for (let month = 1; month <= 12; month++) {
                     const monthTransactions = transactions.filter((t) => {
-                        const tDate = new Date(t.date);
-                        const matchYear = tDate.getFullYear() === filters.year;
-                        const matchMonth = tDate.getMonth() + 1 === month;
+                        const [tYear, tMonth] = t.date.split('-').map(Number);
+                        const matchYear = tYear === filters.year;
+                        const matchMonth = tMonth === month;
                         const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
                         return matchYear && matchMonth && matchOrigin;
                     });
@@ -232,8 +232,8 @@ export const useFinanceStore = create<FinanceState>()(
                 const categoryMap = new Map<string, Map<number, { amount: number; status: TransactionStatus; id?: string; level?: CategoryLevel; sublevel?: string; color?: string }>>();
 
                 const filteredTransactions = transactions.filter((t) => {
-                    const tDate = new Date(t.date);
-                    const matchYear = tDate.getFullYear() === filters.year;
+                    const [tYear] = t.date.split('-').map(Number);
+                    const matchYear = tYear === filters.year;
                     const matchType = t.type === type;
                     const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
                     return matchYear && matchType && matchOrigin;
@@ -241,7 +241,8 @@ export const useFinanceStore = create<FinanceState>()(
 
                 for (const t of filteredTransactions) {
                     const categoryName = t.category?.name || t.description || 'Sin categoría';
-                    const month = new Date(t.date).getMonth() + 1;
+                    const [, tMonth] = t.date.split('-').map(Number);
+                    const month = tMonth; // 1-12
 
                     // Look up category to get level, sublevel and color
                     const category = categories.find(c => c.id === t.category_id) || t.category;
@@ -288,8 +289,8 @@ export const useFinanceStore = create<FinanceState>()(
 
                 // Filter income transactions from Empresa level categories
                 const incomeTransactions = transactions.filter((t) => {
-                    const tDate = new Date(t.date);
-                    const matchYear = tDate.getFullYear() === filters.year;
+                    const [tYear] = t.date.split('-').map(Number);
+                    const matchYear = tYear === filters.year;
                     const matchType = t.type === 'income';
                     const matchOrigin = t.origin === 'business'; // Empresa = business
                     const category = categories.find((c) => c.id === t.category_id);
@@ -301,7 +302,8 @@ export const useFinanceStore = create<FinanceState>()(
 
                 for (const t of incomeTransactions) {
                     const clientName = t.description || t.category?.name || 'Cliente sin nombre';
-                    const month = new Date(t.date).getMonth() + 1;
+                    const [, tMonth] = t.date.split('-').map(Number);
+                    const month = tMonth;
 
                     if (!clientMap.has(clientName)) {
                         clientMap.set(clientName, {
