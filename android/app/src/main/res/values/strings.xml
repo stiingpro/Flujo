@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Radar Financiero</string>
+    <string name="title_activity_main">Radar Financiero</string>
+    <string name="package_name">com.stiingpro.radar</string>
+    <string name="custom_url_scheme">com.stiingpro.radar</string>
+</resources>

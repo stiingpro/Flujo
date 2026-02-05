@@ -359,6 +359,83 @@ export function useSupabaseSync() {
         }
     }, [user, loadedForUserId, loadFromSupabase, setCategories, setTransactions]);
 
+    // --- REALTIME SYNC (The "Mirror Effect") ---
+    useEffect(() => {
+        if (!user) return;
+
+        console.log('[Realtime] Setting up subscription for user:', user.id);
+
+        const channel = supabase.channel('table-db-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'transactions',
+                    filter: `user_id=eq.${user.id}`, // Filter by RLS context ideally, but explicit filter helps
+                },
+                (payload) => {
+                    console.log('[Realtime] Transaction Change:', payload.eventType, payload.new || payload.old);
+
+                    const { transactions } = useFinanceStore.getState();
+
+                    if (payload.eventType === 'INSERT') {
+                        const newTx = payload.new as Transaction;
+                        // Avoid duplication if we already have it (Optimistic UI)
+                        if (!transactions.some(t => t.id === newTx.id)) {
+                            addTransaction(newTx);
+                        }
+                    } else if (payload.eventType === 'UPDATE') {
+                        const updatedTx = payload.new as Transaction;
+                        updateTransaction(updatedTx.id, updatedTx);
+                    } else if (payload.eventType === 'DELETE') {
+                        const deletedTx = payload.old as { id: string };
+                        deleteTransaction(deletedTx.id);
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'categories',
+                    filter: `user_id=eq.${user.id}`,
+                },
+                (payload) => {
+                    console.log('[Realtime] Category Change:', payload.eventType, payload.new || payload.old);
+
+                    const { categories } = useFinanceStore.getState();
+
+                    if (payload.eventType === 'INSERT') {
+                        const newCat = payload.new as Category;
+                        if (!categories.some(c => c.id === newCat.id)) {
+                            setCategories([...categories, newCat]);
+                        }
+                    } else if (payload.eventType === 'UPDATE') {
+                        const updatedCat = payload.new as Category;
+                        const newCats = categories.map(c => c.id === updatedCat.id ? updatedCat : c);
+                        setCategories(newCats);
+                    } else if (payload.eventType === 'DELETE') {
+                        const deletedCat = payload.old as { id: string };
+                        const newCats = categories.filter(c => c.id !== deletedCat.id);
+                        setCategories(newCats);
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('[Realtime] Subscription Status:', status);
+                if (status === 'SUBSCRIBED') {
+                    // Optional: Toast? Nah, too noisy.
+                }
+            });
+
+        return () => {
+            console.log('[Realtime] Unsubscribing...');
+            supabase.removeChannel(channel);
+        };
+    }, [user, addTransaction, updateTransaction, deleteTransaction, setCategories]);
+
     // ... (rest of load logic) ...
 
     const { addToHistory } = useHistory();
