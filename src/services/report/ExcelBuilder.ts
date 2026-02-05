@@ -33,7 +33,7 @@ export class ExcelBuilder {
         });
     }
 
-    public async addSummarySheet(kpis: any, trend: any[], expenses: any[]) {
+    public async addSummarySheet(kpis: any, trend: any[], expenses: any[], comparisonKpis?: { confirmed: any, projected: any }) {
         const sheet = this.dashboardSheet;
 
         // --- TITLE ---
@@ -44,26 +44,76 @@ export class ExcelBuilder {
 
         // --- KPIs ---
         const kpiRow = 5;
-        // Income
-        sheet.getCell(`B${kpiRow}`).value = 'Ingresos Totales';
-        sheet.getCell(`B${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
-        sheet.getCell(`C${kpiRow}`).value = kpis.income;
-        sheet.getCell(`C${kpiRow}`).numFmt = '"$"#,##0';
-        sheet.getCell(`C${kpiRow}`).font = { bold: true, color: { argb: 'FF047857' } }; // Green
 
-        // Expense
-        sheet.getCell(`E${kpiRow}`).value = 'Gastos Totales';
-        sheet.getCell(`E${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
-        sheet.getCell(`F${kpiRow}`).value = kpis.expense;
-        sheet.getCell(`F${kpiRow}`).numFmt = '"$"#,##0';
-        sheet.getCell(`F${kpiRow}`).font = { bold: true, color: { argb: 'FFBE123C' } }; // Red
+        if (comparisonKpis) {
+            // --- COMPARISON MODE (Requested) ---
 
-        // Net
-        sheet.getCell(`H${kpiRow}`).value = 'Utilidad Neta';
-        sheet.getCell(`H${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
-        sheet.getCell(`I${kpiRow}`).value = kpis.net;
-        sheet.getCell(`I${kpiRow}`).numFmt = '"$"#,##0';
-        sheet.getCell(`I${kpiRow}`).font = { bold: true, color: { argb: 'FF1E293B' } };
+            // HEADERS
+            sheet.getCell(`C${kpiRow - 1}`).value = 'SOLO CONFIRMADO';
+            sheet.getCell(`C${kpiRow - 1}`).font = { bold: true, size: 12, color: { argb: 'FF059669' } }; // Emerald
+            sheet.getCell(`C${kpiRow - 1}`).alignment = { horizontal: 'center' };
+
+            sheet.getCell(`E${kpiRow - 1}`).value = 'PROYECTADO + CONFIRMADO';
+            sheet.getCell(`E${kpiRow - 1}`).font = { bold: true, size: 12, color: { argb: 'FF2563EB' } }; // Blue
+            sheet.getCell(`E${kpiRow - 1}`).alignment = { horizontal: 'center' };
+
+            // LABELS
+            ['Ingresos', 'Gastos', 'Utilidad Neta'].forEach((label, i) => {
+                const r = kpiRow + i;
+                sheet.getCell(`B${r}`).value = label;
+                sheet.getCell(`B${r}`).font = { bold: true, color: { argb: 'FF64748B' } };
+            });
+
+            // VALUES (Confirmed)
+            const kc = comparisonKpis.confirmed;
+            sheet.getCell(`C${kpiRow}`).value = kc.income;
+            sheet.getCell(`C${kpiRow + 1}`).value = kc.expense;
+            sheet.getCell(`C${kpiRow + 2}`).value = kc.net;
+
+            // VALUES (Projected)
+            const kp = comparisonKpis.projected;
+            sheet.getCell(`E${kpiRow}`).value = kp.income;
+            sheet.getCell(`E${kpiRow + 1}`).value = kp.expense;
+            sheet.getCell(`E${kpiRow + 2}`).value = kp.net;
+
+            // STYLING
+            [0, 1, 2].forEach(i => {
+                const r = kpiRow + i;
+                // Confirmed Col
+                sheet.getCell(`C${r}`).numFmt = '"$"#,##0';
+                sheet.getCell(`C${r}`).font = { bold: true };
+                sheet.getCell(`C${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+
+                // Projected Col
+                sheet.getCell(`E${r}`).numFmt = '"$"#,##0';
+                sheet.getCell(`E${r}`).font = { bold: true };
+                sheet.getCell(`E${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+            });
+
+        } else {
+            // --- LEGACY SINGLE KPI MODE ---
+            // Income
+            sheet.getCell(`B${kpiRow}`).value = 'Ingresos Totales';
+            sheet.getCell(`B${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
+            sheet.getCell(`C${kpiRow}`).value = kpis.income;
+            sheet.getCell(`C${kpiRow}`).numFmt = '"$"#,##0';
+            sheet.getCell(`C${kpiRow}`).font = { bold: true, color: { argb: 'FF047857' } }; // Green
+
+            // Expense
+            sheet.getCell(`E${kpiRow}`).value = 'Gastos Totales';
+            sheet.getCell(`E${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
+            sheet.getCell(`F${kpiRow}`).value = kpis.expense;
+            sheet.getCell(`F${kpiRow}`).numFmt = '"$"#,##0';
+            sheet.getCell(`F${kpiRow}`).font = { bold: true, color: { argb: 'FFBE123C' } }; // Red
+
+            // Net
+            sheet.getCell(`H${kpiRow}`).value = 'Utilidad Neta';
+            sheet.getCell(`H${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
+            sheet.getCell(`I${kpiRow}`).value = kpis.net;
+            sheet.getCell(`I${kpiRow}`).numFmt = '"$"#,##0';
+            sheet.getCell(`I${kpiRow}`).font = { bold: true, color: { argb: 'FF1E293B' } };
+        }
+
 
         // --- TREND TABLE ---
         const trendStartRow = 9;

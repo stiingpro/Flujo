@@ -8,6 +8,10 @@ interface ExportData {
     transactions: Transaction[];
     categories: Category[];
     year: number;
+    kpis?: {
+        confirmed: { income: number; expense: number; net: number };
+        projected: { income: number; expense: number; net: number };
+    };
 }
 
 interface ReportContextType {

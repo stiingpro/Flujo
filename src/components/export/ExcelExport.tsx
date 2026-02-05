@@ -11,23 +11,52 @@ export function ExcelExport() {
     const { generateExcelReport, isGenerating } = useReport();
 
     const handleExport = async () => {
-        const filteredTransactions = transactions.filter((t) => {
+        // 1. Base Filter (Year & Origin only, IGNORING projected switch for the full set)
+        const baseTransactions = transactions.filter((t) => {
             const tDate = new Date(t.date);
             const matchYear = tDate.getFullYear() === filters.year;
             const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
-            const matchProjected = filters.showProjected ? true : t.status === 'real';
-            return matchYear && matchOrigin && matchProjected;
+            return matchYear && matchOrigin;
         });
 
-        if (filteredTransactions.length === 0) {
-            toast.error('No hay datos visibles para exportar');
+        if (baseTransactions.length === 0) {
+            toast.error('No hay datos para exportar en este año');
             return;
         }
 
+        // 2. Calculate KPIs
+        // Confirmed Only
+        const txConfirmed = baseTransactions.filter(t => t.status === 'real');
+        const kpisConfirmed = {
+            income: txConfirmed.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+            expense: txConfirmed.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+            net: 0 // Will be calc below
+        };
+        kpisConfirmed.net = kpisConfirmed.income - kpisConfirmed.expense;
+
+        // Projected (All capable)
+        // Usually "Projected" view implies Real + Projected. 
+        const kpisProjected = {
+            income: baseTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+            expense: baseTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+            net: 0
+        };
+        kpisProjected.net = kpisProjected.income - kpisProjected.expense;
+
+        // 3. Transactions to List (Respect the user's current view filter for the list part?)
+        // The user said "Insert... header section... showing KPIs... before rendering the table".
+        // It implies the table matches the view, but header shows both.
+        // Let's filter the list as before.
+        const listTransactions = baseTransactions.filter(t => filters.showProjected ? true : t.status === 'real');
+
         await generateExcelReport({
-            transactions: filteredTransactions,
+            transactions: listTransactions, // The list follows the view
             categories,
-            year: filters.year
+            year: filters.year,
+            kpis: {
+                confirmed: kpisConfirmed,
+                projected: kpisProjected
+            }
         });
     };
 

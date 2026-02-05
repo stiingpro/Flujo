@@ -127,10 +127,14 @@ const styles = StyleSheet.create({
 interface FinancialReportProps {
     transactions: Transaction[];
     filters: DashboardFilters;
+    comparisonKpis?: {
+        confirmed: { income: number; expense: number; net: number };
+        projected: { income: number; expense: number; net: number };
+    };
 }
 
-export const FinancialReportPDF = ({ transactions, filters }: FinancialReportProps) => {
-    // Calculate Summary Data
+export const FinancialReportPDF = ({ transactions, filters, comparisonKpis }: FinancialReportProps) => {
+    // Calculate Summary Data (Fallback if no comparison provided)
     const expenses = transactions.filter(t => t.type === 'expense');
     const income = transactions.filter(t => t.type === 'income');
 
@@ -157,23 +161,57 @@ export const FinancialReportPDF = ({ transactions, filters }: FinancialReportPro
                     </View>
                 </View>
 
-                {/* KPI Summary */}
-                <View style={[styles.section, styles.summaryGrid]}>
-                    <View style={styles.kpiCard}>
-                        <Text style={styles.kpiTitle}>Ingresos Totales</Text>
-                        <Text style={[styles.kpiValue, styles.highlightPositive]}>{formatCurrency(totalIncome)}</Text>
+                {/* KPI Summary (Comparison or Single) */}
+                {comparisonKpis ? (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Resumen Comparativo</Text>
+                        <View style={styles.table}>
+                            <View style={styles.tableRow}>
+                                <View style={[styles.tableColHeader, { width: '40%' }]}><Text style={styles.tableCellHeader}>Indicador</Text></View>
+                                <View style={[styles.tableColHeader, { width: '30%', backgroundColor: '#ECFDF5' }]}><Text style={[styles.tableCellHeader, { color: '#047857' }]}>Solo Confirmado</Text></View>
+                                <View style={[styles.tableColHeader, { width: '30%', backgroundColor: '#EFF6FF' }]}><Text style={[styles.tableCellHeader, { color: '#1D4ED8' }]}>Proyectado + Real</Text></View>
+                            </View>
+
+                            {/* Income */}
+                            <View style={styles.tableRow}>
+                                <View style={[styles.tableCol, { width: '40%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>Ingresos Totales</Text></View>
+                                <View style={[styles.tableCol, { width: '30%' }]}><Text style={styles.tableCell}>{formatCurrency(comparisonKpis.confirmed.income)}</Text></View>
+                                <View style={[styles.tableCol, { width: '30%' }]}><Text style={styles.tableCell}>{formatCurrency(comparisonKpis.projected.income)}</Text></View>
+                            </View>
+
+                            {/* Expense */}
+                            <View style={styles.tableRow}>
+                                <View style={[styles.tableCol, { width: '40%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>Gastos Totales</Text></View>
+                                <View style={[styles.tableCol, { width: '30%' }]}><Text style={styles.tableCell}>{formatCurrency(comparisonKpis.confirmed.expense)}</Text></View>
+                                <View style={[styles.tableCol, { width: '30%' }]}><Text style={styles.tableCell}>{formatCurrency(comparisonKpis.projected.expense)}</Text></View>
+                            </View>
+
+                            {/* Net */}
+                            <View style={styles.tableRow}>
+                                <View style={[styles.tableCol, { width: '40%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold' }]}>Utilidad Neta</Text></View>
+                                <View style={[styles.tableCol, { width: '30%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold', color: comparisonKpis.confirmed.net >= 0 ? '#059669' : '#DC2626' }]}>{formatCurrency(comparisonKpis.confirmed.net)}</Text></View>
+                                <View style={[styles.tableCol, { width: '30%' }]}><Text style={[styles.tableCell, { fontWeight: 'bold', color: comparisonKpis.projected.net >= 0 ? '#059669' : '#DC2626' }]}>{formatCurrency(comparisonKpis.projected.net)}</Text></View>
+                            </View>
+                        </View>
                     </View>
-                    <View style={styles.kpiCard}>
-                        <Text style={styles.kpiTitle}>Gastos Totales</Text>
-                        <Text style={[styles.kpiValue, styles.highlightNegative]}>{formatCurrency(totalExpenses)}</Text>
+                ) : (
+                    <View style={[styles.section, styles.summaryGrid]}>
+                        <View style={styles.kpiCard}>
+                            <Text style={styles.kpiTitle}>Ingresos Totales</Text>
+                            <Text style={[styles.kpiValue, styles.highlightPositive]}>{formatCurrency(totalIncome)}</Text>
+                        </View>
+                        <View style={styles.kpiCard}>
+                            <Text style={styles.kpiTitle}>Gastos Totales</Text>
+                            <Text style={[styles.kpiValue, styles.highlightNegative]}>{formatCurrency(totalExpenses)}</Text>
+                        </View>
+                        <View style={styles.kpiCard}>
+                            <Text style={styles.kpiTitle}>Resultado Neto</Text>
+                            <Text style={[styles.kpiValue, netResult >= 0 ? styles.highlightPositive : styles.highlightNegative]}>
+                                {formatCurrency(netResult)}
+                            </Text>
+                        </View>
                     </View>
-                    <View style={styles.kpiCard}>
-                        <Text style={styles.kpiTitle}>Resultado Neto</Text>
-                        <Text style={[styles.kpiValue, netResult >= 0 ? styles.highlightPositive : styles.highlightNegative]}>
-                            {formatCurrency(netResult)}
-                        </Text>
-                    </View>
-                </View>
+                )}
 
                 {/* Monthly Breakdown Table */}
                 <View style={styles.section}>

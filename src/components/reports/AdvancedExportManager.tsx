@@ -81,7 +81,8 @@ export function AdvancedExportManager({ children }: { children: React.ReactNode 
             // Title logic is now inside addSummarySheet or we can adjust
 
             // Add Summary Sheet (Text Based)
-            await builder.addSummarySheet(processed.kpis, processed.trend, processed.expenses);
+            // data.kpis contains { confirmed, projected } if provided by ExcelExport
+            await builder.addSummarySheet(processed.kpis, processed.trend, processed.expenses, (data as any).kpis);
 
             // 4. Add Legacy Details
             builder.addLegacyDataSheet(data.transactions, data.categories);

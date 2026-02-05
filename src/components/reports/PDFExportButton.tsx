@@ -24,21 +24,39 @@ export function PDFExportButton() {
         );
     }
 
-    // Filter transactions logic (same as Excel)
-    const filteredTransactions = transactions.filter((t) => {
+    // Base Filter for "All" (year + origin)
+    const baseTransactions = transactions.filter((t) => {
         const tDate = new Date(t.date);
         const matchYear = tDate.getFullYear() === filters.year;
         const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
-        const matchProjected = filters.showProjected ? true : t.status === 'real';
-
-        return matchYear && matchOrigin && matchProjected;
+        return matchYear && matchOrigin;
     });
+
+    // LIST Filter (What the user sees in the PDF list)
+    const listTransactions = baseTransactions.filter(t => filters.showProjected ? true : t.status === 'real');
+
+    // KPI Calculation (Comparison)
+    const kpisConfirmed = {
+        income: baseTransactions.filter(t => t.status === 'real' && t.type === 'income').reduce((s, t) => s + t.amount, 0),
+        expense: baseTransactions.filter(t => t.status === 'real' && t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+        net: 0
+    };
+    kpisConfirmed.net = kpisConfirmed.income - kpisConfirmed.expense;
+
+    const kpisProjected = {
+        income: baseTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+        expense: baseTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+        net: 0
+    };
+    kpisProjected.net = kpisProjected.income - kpisProjected.expense;
+
+    const comparisonKpis = { confirmed: kpisConfirmed, projected: kpisProjected };
 
     const fileName = `RadarFinanciero_Reporte_${filters.year}.pdf`;
 
     return (
         <PDFDownloadLink
-            document={<FinancialReportPDF transactions={filteredTransactions} filters={filters} />}
+            document={<FinancialReportPDF transactions={listTransactions} filters={filters} comparisonKpis={comparisonKpis} />}
             fileName={fileName}
         >
             {({ blob, url, loading, error }) => (
