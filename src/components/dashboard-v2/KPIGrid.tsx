@@ -13,13 +13,91 @@ interface KPIMetrics {
     monthlyExpense: number; // Current month expense projected + real
     lastMonthDelta: number; // Percentage change vs last month net income
     netMargin: number; // New PRO metric
+    cashOnHand?: number;
+    netCashFlow?: number;
 }
+
+import { useFinanceStore } from '@/stores/useFinanceStore';
 
 export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
     const { isPro } = useFeatureMode();
+    const { filters } = useFinanceStore();
+    const showProjected = filters.showProjected;
+
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(val);
 
+    // --- MODE 1: SOLO CONFIRMADO (Real Cash View) ---
+    if (!showProjected) {
+        return (
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6`}>
+                {/* 1. Plata en Mano (Cash on Hand) */}
+                <Card className="bg-card border-border shadow-sm">
+                    <CardContent className="p-6">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-muted-foreground">Plata en Mano</span>
+                            <span className="text-2xl font-bold text-foreground">{formatCurrency(metrics.cashOnHand || 0)}</span>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                <Wallet className="w-3 h-3 text-blue-500" />
+                                <span>Disponibilidad inmediata</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 2. Resultado del Mes (Net Cash Flow) */}
+                <Card className="bg-card border-border shadow-sm">
+                    <CardContent className="p-6">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-muted-foreground">Resultado del Mes</span>
+                            <span className={cn(
+                                "text-2xl font-bold",
+                                (metrics.netCashFlow || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                            )}>
+                                {formatCurrency(metrics.netCashFlow || 0)}
+                            </span>
+                            <p className={cn(
+                                "text-xs mt-1 font-medium",
+                                (metrics.netCashFlow || 0) >= 0 ? "text-emerald-600" : "text-rose-600"
+                            )}>
+                                {(metrics.netCashFlow || 0) >= 0 ? "Superávit (Ganando terreno)" : "Déficit (Consumiendo caja)"}
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 3. Ingresos Reales */}
+                <Card className="bg-card border-border shadow-sm">
+                    <CardContent className="p-6">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-muted-foreground">Ingresos Reales</span>
+                            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(metrics.monthlyRevenue)}</span>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                                <span>Recibido este mes</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 4. Gastos Reales */}
+                <Card className="bg-card border-border shadow-sm">
+                    <CardContent className="p-6">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-muted-foreground">Gastos Reales</span>
+                            <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{formatCurrency(metrics.monthlyExpense)}</span>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                <ArrowDownRight className="w-3 h-3 text-rose-500" />
+                                <span>Pagado este mes</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    // --- MODE 2: CONFIRMADO + PROYECTADO (Strategic View) ---
     return (
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${isPro ? '4' : '3'} gap-4 mb-6`}>
             {/* Runway Card (Oxígeno) with Velocimeter */}

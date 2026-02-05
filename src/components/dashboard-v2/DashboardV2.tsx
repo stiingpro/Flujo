@@ -135,7 +135,9 @@ export function DashboardV2() {
             monthlyRevenue: currentMonthStats.income,
             monthlyExpense: currentMonthStats.expense,
             lastMonthDelta,
-            netMargin
+            netMargin,
+            cashOnHand: currentCash,
+            netCashFlow: currentNet
         };
     };
 
