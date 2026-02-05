@@ -60,9 +60,13 @@ import { useProjectData } from '@/hooks/useProjectData';
 
 export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps) {
     const { getCategoryMonthlyData, transactions, filters, categories, isSimulationMode } = useProjectData();
-    const { updateTransactionAndSync, addTransactionAndSync, removeCategoryByName } = useSupabaseSync();
+
+    const { updateTransactionAndSync, addTransactionAndSync, removeCategoryByName, renameCategory } = useSupabaseSync();
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
     const [editValue, setEditValue] = useState<string>('');
+
+    // New state for renaming category
+    const [renamingCategory, setRenamingCategory] = useState<{ name: string; value: string } | null>(null);
 
     // Refs for auto-scroll
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -274,24 +278,61 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                     <div className="flex items-center gap-2 pl-4 pr-3 justify-between group/cell relative">
                         <div className="flex items-center gap-2 overflow-hidden">
                             <div className={cn("w-1 h-6 rounded-full shrink-0", sublevel ? SUBLEVEL_COLORS[sublevel as PersonalSublevel] : (level === 'personal' ? 'bg-purple-300' : 'bg-blue-400'))} />
-                            <span className="font-medium text-sm text-gray-700 truncate max-w-[140px]" title={item.name}>
-                                {item.name}
-                            </span>
+
+                            {renamingCategory?.name === item.name ? (
+                                <Input
+                                    autoFocus
+                                    value={renamingCategory.value}
+                                    onChange={(e) => setRenamingCategory({ ...renamingCategory, value: e.target.value })}
+                                    onKeyDown={async (e) => {
+                                        if (e.key === 'Enter') {
+                                            if (renamingCategory.value !== item.name) {
+                                                await renameCategory(item.name, renamingCategory.value, filterType);
+                                            }
+                                            setRenamingCategory(null);
+                                        }
+                                        if (e.key === 'Escape') setRenamingCategory(null);
+                                    }}
+                                    onBlur={() => setRenamingCategory(null)}
+                                    className="h-6 text-sm p-1 ml-1"
+                                />
+                            ) : (
+                                <span
+                                    className="font-medium text-sm text-gray-700 truncate max-w-[140px] cursor-pointer hover:underline decoration-dashed transition-all"
+                                    title="Click para editar nombre"
+                                    onClick={() => setRenamingCategory({ name: item.name, value: item.name })}
+                                >
+                                    {item.name}
+                                </span>
+                            )}
                         </div>
 
-                        {/* Delete Action */}
-                        <button
-                            onClick={async (e) => {
-                                e.stopPropagation();
-                                if (window.confirm(`¿Estás seguro de eliminar la categoría "${item.name}" y todos sus movimientos?`)) {
-                                    await removeCategoryByName(item.name);
-                                }
-                            }}
-                            className="opacity-0 group-hover/cell:opacity-100 hover:text-red-600 transition-opacity p-1"
-                            title="Eliminar categoría"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {/* Actions Container */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover/cell:opacity-100 transition-opacity">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRenamingCategory({ name: item.name, value: item.name });
+                                }}
+                                className="hover:text-amber-600 p-1"
+                                title="Editar nombre"
+                            >
+                                <Edit2 className="w-3 h-3" />
+                            </button>
+
+                            <button
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`¿Estás seguro de eliminar la categoría "${item.name}" y todos sus movimientos?`)) {
+                                        await removeCategoryByName(item.name, filterType);
+                                    }
+                                }}
+                                className="hover:text-red-600 p-1"
+                                title="Eliminar categoría"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     </div>
                 </td>
                 {MONTH_NAMES.map((_, index) => {

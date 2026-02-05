@@ -190,7 +190,7 @@ export function CategoryManager() {
         // We use the new RPC to delete ALL categories with this name on the server.
         // This handles "Ghost" items that are not in the local store but are in the DB.
 
-        const success = await removeCategoryByName(category.name.trim());
+        const success = await removeCategoryByName(category.name.trim(), category.type);
 
         if (!success) {
             // Error handled in hook (toast)

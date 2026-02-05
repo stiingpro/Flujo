@@ -263,7 +263,7 @@ export function PLTable({ filterType }: PLTableProps) {
 
             if (category) {
                 // Use RPC to delete category (and duplicates)
-                await removeCategoryByName(categoryName);
+                await removeCategoryByName(categoryName, txType);
             }
 
             // Silent success as requested

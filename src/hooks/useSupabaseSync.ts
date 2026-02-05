@@ -167,50 +167,85 @@ export function useSupabaseSync() {
         }
     }, [user]);
 
-    // Delete category by NAME (Aggressive RPC)
-    const removeCategoryByName = useCallback(async (name: string): Promise<boolean> => {
+    // Delete category by NAME and TYPE (Aggressive RPC)
+    const removeCategoryByName = useCallback(async (name: string, type: string): Promise<boolean> => {
         if (!user) return false;
 
+        // 1. Optimistic Update
+        // Remove from store immediately
+        const { categories: currentCats, transactions: currentTx } = useFinanceStore.getState();
+
+        // Filter out categories
+        const newCats = currentCats.filter(c => !(c.name === name && c.type === type));
+        setCategories(newCats);
+
+        // Filter out transactions related to this category (by name/type join)
+        // We know categories are being deleted, so transactions linking to them should also go 
+        // OR we just keep them but they lose category linkage? 
+        // The RPC deletes them. So we should remove them locally too.
+        // We need to find the IDs of the categories we are deleting to match transaction.category_id
+        const catsToDelete = currentCats.filter(c => c.name === name && c.type === type);
+        const catIds = catsToDelete.map(c => c.id);
+
+        const newTx = currentTx.filter(t => !catIds.includes(t.category_id || ''));
+        setTransactions(newTx);
+
         try {
-            console.log('[Sync] Removing category by NAME via RPC:', name);
+            console.log(`[Sync] Removing category "${name}" (${type}) via RPC`);
 
-            // RPC call to delete all with this name
-            // Requires 'delete_category_by_name' function in DB
             const { data: deletedCount, error } = await supabase
-                .rpc('delete_category_by_name', { category_name: name });
+                .rpc('delete_category_by_name', {
+                    category_name: name,
+                    category_type: type
+                });
 
-            if (error) {
-                // If RPC missing, try regular delete (best effort, though likely fails if RLS issue)
-                if (error.message?.includes('does not exist')) {
-                    console.warn('[Sync] RPC missing. Fallback not possible for name delete without ID.');
-                    toast.error('Error: Falta la función de base de datos. Ejecuta el script SQL.');
-                    return false;
-                }
-                throw error;
-            }
-
-            console.log('[Sync] Deleted count:', deletedCount);
+            if (error) throw error;
 
             if (deletedCount === 0) {
-                toast.warning(`No se encontraron categorías llamadas "${name}" en la base de datos.`);
-                // Check if it exists locally but not in DB?
-                return true; // Assume success (already gone)
-            } else {
-                if (deletedCount > 1) {
-                    // toast.success(`Se eliminaron ${deletedCount} copias de "${name}".`);
-                    console.log(`[Sync] Se eliminaron ${deletedCount} copias de "${name}".`);
-                }
-                return true;
+                // Revert? Nah, if it returned 0 it means it wasn't there, so we are consistent (empty).
+                console.log('[Sync] RPC returned 0, maybe already deleted.');
             }
+            return true;
+
         } catch (error: any) {
             console.error('[Sync] Error deleting by name:', error);
             toast.error('Error al borrar: ' + error.message);
+
+            // Rollback (Not full rollback implemented for simplicity, just reload)
+            loadFromSupabase();
             return false;
-        } finally {
-            // ALWAYS refresh source of truth
-            await loadFromSupabase();
         }
-    }, [user, loadFromSupabase]);
+    }, [user, setCategories, setTransactions, loadFromSupabase]);
+
+    // Rename Category
+    const renameCategory = useCallback(async (oldName: string, newName: string, type: string) => {
+        if (!user) return;
+
+        // 1. Optimistic Update
+        const { categories: currentCats } = useFinanceStore.getState();
+        const newCats = currentCats.map(c =>
+            (c.name === oldName && c.type === type)
+                ? { ...c, name: newName }
+                : c
+        );
+        setCategories(newCats);
+
+        try {
+            const { error } = await supabase.rpc('rename_category', {
+                old_name: oldName,
+                new_name: newName,
+                category_type: type
+            });
+
+            if (error) throw error;
+            toast.success('Categoría renombrada');
+
+        } catch (error: any) {
+            console.error('[Sync] Error renaming:', error);
+            toast.error('Error al renombrar');
+            loadFromSupabase(); // Revert
+        }
+    }, [user, setCategories, loadFromSupabase]);
 
     // Delete category from Supabase (Legacy/ID based - kept for reference but UI likely uses Name now)
     const removeCategory = useCallback(async (categoryId: string): Promise<boolean> => {
@@ -423,6 +458,7 @@ export function useSupabaseSync() {
         removeTransaction,
         removeCategory,
         removeCategoryByName,
+        renameCategory,
         syncAllToSupabase,
         addTransactionAndSync, // Export new helper
         updateTransactionAndSync, // Export new helper
