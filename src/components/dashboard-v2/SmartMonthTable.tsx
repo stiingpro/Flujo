@@ -320,9 +320,7 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                             <button
                                 onClick={async (e) => {
                                     e.stopPropagation();
-                                    if (window.confirm(`¿Estás seguro de eliminar la categoría "${item.name}" y todos sus movimientos?`)) {
-                                        await removeCategoryByName(item.name, filterType);
-                                    }
+                                    await removeCategoryByName(item.name, filterType);
                                 }}
                                 className="hover:text-red-600 p-1"
                                 title="Eliminar categoría"
