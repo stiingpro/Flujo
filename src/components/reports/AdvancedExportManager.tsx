@@ -6,10 +6,11 @@ import { toPng } from 'html-to-image';
 import { ReportContextProvider } from '@/context/ReportContext';
 import { ReportHiddenRenderer } from './ReportHiddenRenderer';
 import { ExcelBuilder } from '@/services/report/ExcelBuilder';
-import { Transaction, Category } from '@/types';
+import { Transaction, Category, MONTH_NAMES } from '@/types';
 import { toast } from 'sonner';
 
 export function AdvancedExportManager({ children }: { children: React.ReactNode }) {
+    // ... (keep existing state)
     const [isGenerating, setIsGenerating] = useState(false);
     const rendererRef = useRef<HTMLDivElement>(null);
     const [reportData, setReportData] = useState<{
@@ -19,7 +20,7 @@ export function AdvancedExportManager({ children }: { children: React.ReactNode 
     } | null>(null);
 
     const processData = (transactions: Transaction[], year: number) => {
-        // Calculate KPIs
+        // ... (KPI calc same)
         const totalIncome = transactions
             .filter(t => t.type === 'income' && new Date(t.date).getFullYear() === year)
             .reduce((sum, t) => sum + t.amount, 0);
@@ -30,14 +31,13 @@ export function AdvancedExportManager({ children }: { children: React.ReactNode 
 
         // Trend Data (Monthly Net)
         const trend = Array.from({ length: 12 }, (_, i) => {
-            const month = i + 1;
             const inc = transactions
                 .filter(t => t.type === 'income' && new Date(t.date).getMonth() === i && new Date(t.date).getFullYear() === year)
                 .reduce((sum, t) => sum + t.amount, 0);
             const exp = transactions
                 .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === i && new Date(t.date).getFullYear() === year)
                 .reduce((sum, t) => sum + t.amount, 0);
-            return { month: `Month ${month}`, net: inc - exp };
+            return { month: MONTH_NAMES[i], net: inc - exp };
         });
 
         // Expense Breakdown

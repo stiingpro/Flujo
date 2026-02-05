@@ -6,12 +6,16 @@ import { FocusToggle, FocusMode } from './FocusToggle';
 import { InvestorToggle } from '@/components/dashboard/InvestorToggle';
 import { ImportWizardModal } from '@/components/import/ImportWizardModal';
 import { KPIGrid } from './KPIGrid';
+import { AdvancedExportManager } from '@/components/reports/AdvancedExportManager';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useSimulationStore } from '@/stores/useSimulationStore';
+import { SimulationSidebar } from '@/components/simulation/SimulationSidebar';
 import { useFeatureMode } from '@/context/FeatureModeContext';
 import { useMonthlyBalances } from '@/hooks/useMonthlyBalances';
 import { MainTab, MonthlyBalance } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingDown, TrendingUp, Sparkles, Filter } from 'lucide-react';
+import { TrendingDown, TrendingUp, Sparkles, Filter, Bot } from 'lucide-react';
+import { Toaster } from 'sonner';
 
 export function DashboardV2() {
     const [focusMode, setFocusMode] = useState<FocusMode>('all');
@@ -20,6 +24,17 @@ export function DashboardV2() {
     const { filters } = useFinanceStore();
     const { balances, isLoading: isLoadingBalances } = useMonthlyBalances();
     const { isPro } = useFeatureMode(); // Add context hook
+    const { setFilters } = useFinanceStore();
+
+    // Sync FocusMode with Global Store Filters (so Export buttons work correctly)
+    useEffect(() => {
+        const originMap: Record<FocusMode, 'all' | 'business' | 'personal'> = {
+            'all': 'all',
+            'company': 'business',
+            'personal': 'personal'
+        };
+        setFilters({ origin: originMap[focusMode] });
+    }, [focusMode, setFilters]);
 
     // Reset Investor Mode when returning to Standard
     useEffect(() => {
@@ -101,7 +116,6 @@ export function DashboardV2() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <ImportWizardModal />
                     <div className="flex bg-muted/30 p-1 rounded-lg border items-center gap-2">
                         <InvestorToggle isInvestorMode={isInvestorMode} onToggle={() => setIsInvestorMode(!isInvestorMode)} />
                         <div className="w-px h-6 bg-border mx-1" />
@@ -125,6 +139,7 @@ export function DashboardV2() {
                         </div>
                     </div>
                 )}
+
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
                     <div className="flex items-center justify-between">
                         <TabsList className="h-10 bg-muted/60">
@@ -153,7 +168,6 @@ export function DashboardV2() {
                     </TabsContent>
                 </Tabs>
             </div>
-
         </div>
     );
 }

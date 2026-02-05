@@ -59,7 +59,7 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
                             {/* Needle */}
                             <g style={{
                                 transformOrigin: '50px 50px',
-                                transform: `rotate(${Math.max(0, Math.min(180, (metrics.runway / 6) * 180)) - 180}deg)`,
+                                transform: `rotate(${Math.max(0, Math.min(180, (Math.max(0, metrics.runway) / 6) * 180)) - 180}deg)`,
                                 transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}>
                                 <line x1="50" y1="50" x2="10" y2="50" stroke="#1e293b" strokeWidth="3" strokeLinecap="round" />

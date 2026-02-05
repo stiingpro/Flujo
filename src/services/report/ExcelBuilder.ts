@@ -23,7 +23,7 @@ export class ExcelBuilder {
         this.workbook.modified = new Date();
 
         // 1. Dashboard Sheet (Visuals)
-        this.dashboardSheet = this.workbook.addWorksheet('Executive Dashboard', {
+        this.dashboardSheet = this.workbook.addWorksheet('Reporte Ejecutivo', {
             views: [{ showGridLines: false, zoomScale: 85 }]
         });
 

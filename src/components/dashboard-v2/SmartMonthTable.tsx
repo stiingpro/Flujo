@@ -56,8 +56,10 @@ const LEVEL_COLORS = {
     },
 };
 
+import { useProjectData } from '@/hooks/useProjectData';
+
 export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps) {
-    const { getCategoryMonthlyData, transactions, filters, categories } = useFinanceStore();
+    const { getCategoryMonthlyData, transactions, filters, categories, isSimulationMode } = useProjectData();
     const { updateTransactionAndSync, addTransactionAndSync, removeCategoryByName } = useSupabaseSync();
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
     const [editValue, setEditValue] = useState<string>('');
@@ -408,7 +410,15 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                                     {MONTH_NAMES.map((_, index) => {
                                         const month = index + 1;
                                         // Calculate total for this month across ALL categories
-                                        const monthTotal = Array.from(data.values()).reduce((sum, monthsMap) => {
+                                        const monthTotal = Array.from(data.entries()).reduce((sum, [catName, monthsMap]) => {
+                                            // Check visibility
+                                            const isPersonal = Object.values(groupedData.personalBySubLevel).some(group => group.some(i => i.name === catName));
+                                            const isCompany = groupedData.empresa.some(i => i.name === catName);
+
+                                            if ((isPersonal && !showPersonal) || (isCompany && !showCompany)) {
+                                                return sum;
+                                            }
+
                                             const cell = monthsMap.get(month);
                                             if (cell && (filters.showProjected || cell.status === 'real')) {
                                                 return sum + cell.amount;
@@ -425,7 +435,15 @@ export function SmartMonthTable({ filterType, focusMode }: SmartMonthTableProps)
                                     <TableCell className="text-right px-4 py-3 text-gray-900 bg-gray-200/50 min-w-[100px]">
                                         {/* Grand Total of Totals */}
                                         {formatCurrency(
-                                            Array.from(data.values()).reduce((totalSum, monthsMap) => {
+                                            Array.from(data.entries()).reduce((totalSum, [catName, monthsMap]) => {
+                                                // Check visibility
+                                                const isPersonal = Object.values(groupedData.personalBySubLevel).some(group => group.some(i => i.name === catName));
+                                                const isCompany = groupedData.empresa.some(i => i.name === catName);
+
+                                                if ((isPersonal && !showPersonal) || (isCompany && !showCompany)) {
+                                                    return totalSum;
+                                                }
+
                                                 return totalSum + Array.from(monthsMap.values()).reduce((mSum, cell) => {
                                                     if (filters.showProjected || cell.status === 'real') {
                                                         return mSum + cell.amount;
