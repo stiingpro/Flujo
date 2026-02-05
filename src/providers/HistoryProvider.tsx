@@ -30,17 +30,17 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         setHistoryStack((prev) => [...prev.slice(-19), newItem]); // Keep last 20 actions
 
         // Optional: Show immediate "Undo" toast
-        toast.success(label, {
-            action: {
-                label: 'Deshacer',
-                onClick: async () => {
-                    await undoFn();
-                    setHistoryStack((prev) => prev.filter((item) => item !== newItem));
-                    toast.info('Acción deshecha');
-                },
-            },
-            duration: 4000,
-        });
+        // toast.success(label, {
+        //     action: {
+        //         label: 'Deshacer',
+        //         onClick: async () => {
+        //             await undoFn();
+        //             setHistoryStack((prev) => prev.filter((item) => item !== newItem));
+        //             toast.info('Acción deshecha');
+        //         },
+        //     },
+        //     duration: 4000,
+        // });
     }, []);
 
     const undo = useCallback(async () => {

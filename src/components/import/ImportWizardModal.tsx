@@ -175,7 +175,7 @@ export function ImportWizardModal() {
                     description: row.description,
                     category_id: catId,
                     type: row.type,
-                    status: 'real' as const,
+                    status: row.status, // Use the detected status (Real vs Projected)
                     origin: 'business' as const,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
