@@ -458,27 +458,44 @@ export function useSupabaseSync() {
         try {
             console.log('[Sync] Initiating Factory Reset...');
 
-            // 1. Call RPC
-            const { error } = await supabase.rpc('reset_user_data');
+            // 1. Try RPC first (Fastest/Safest)
+            const { error: rpcError } = await supabase.rpc('reset_user_data');
 
-            if (error) throw error;
+            if (rpcError) {
+                console.warn('[Sync] RPC reset_user_data failed or missing. Switch to Plan B (Manual Delete). Error:', rpcError.message);
 
-            // 2. Clear Local Store
+                // 2. Plan B: Manual Deletion via Client
+                // Delete Transactions first (Foreign Key constraint)
+                const { error: txError } = await supabase
+                    .from('transactions')
+                    .delete()
+                    .eq('user_id', user.id); // Although RLS forces this, explicit check is safer
+
+                if (txError) throw new Error('Plan B (Transactions) failed: ' + txError.message);
+
+                // Delete Categories second
+                const { error: catError } = await supabase
+                    .from('categories')
+                    .delete()
+                    .eq('user_id', user.id);
+
+                if (catError) throw new Error('Plan B (Categories) failed: ' + catError.message);
+
+                console.log('[Sync] Manual reset successful.');
+            } else {
+                console.log('[Sync] RPC reset successful.');
+            }
+
+            // 3. Clear Local Store
             setTransactions([]);
             setCategories([]);
+            setProfile(null); // Optional: clear profile local state if needed? No, profile stays.
 
-            console.log('[Sync] Account reset successful.');
             return true;
-        } catch (error: any) {
-            console.error('[Sync] Error resetting account:', error);
 
-            // Fallback: If RPC fails (e.g. doesn't exist yet), try manual delete? 
-            // Better to just fail safe and ask user to contact support or run migration.
-            if (error.message?.includes('function') && error.message?.includes('does not exist')) {
-                toast.error('Error crítico: Función de reseteo no encontrada en base de datos.');
-            } else {
-                toast.error('Error al formatear: ' + error.message);
-            }
+        } catch (error: any) {
+            console.error('[Sync] Critical Error resetting account:', error);
+            toast.error('Error CRÍTICO al formatear: ' + (error.message || 'Desconocido'));
             return false;
         }
     }, [user, setTransactions, setCategories]);
