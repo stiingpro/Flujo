@@ -33,17 +33,90 @@ export class ExcelBuilder {
         });
     }
 
-    public async addImage(image: ExcelImage) {
-        const imageId = this.workbook.addImage({
-            base64: image.base64,
-            extension: 'png',
+    public async addSummarySheet(kpis: any, trend: any[], expenses: any[]) {
+        const sheet = this.dashboardSheet;
+
+        // --- TITLE ---
+        sheet.mergeCells('B2:H2');
+        sheet.getCell('B2').value = 'RADAR FINANCIERO - REPORTE EJECUTIVO';
+        sheet.getCell('B2').font = { size: 20, bold: true, color: { argb: 'FF1E293B' } };
+        sheet.getCell('B2').alignment = { horizontal: 'center' };
+
+        // --- KPIs ---
+        const kpiRow = 5;
+        // Income
+        sheet.getCell(`B${kpiRow}`).value = 'Ingresos Totales';
+        sheet.getCell(`B${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
+        sheet.getCell(`C${kpiRow}`).value = kpis.income;
+        sheet.getCell(`C${kpiRow}`).numFmt = '"$"#,##0';
+        sheet.getCell(`C${kpiRow}`).font = { bold: true, color: { argb: 'FF047857' } }; // Green
+
+        // Expense
+        sheet.getCell(`E${kpiRow}`).value = 'Gastos Totales';
+        sheet.getCell(`E${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
+        sheet.getCell(`F${kpiRow}`).value = kpis.expense;
+        sheet.getCell(`F${kpiRow}`).numFmt = '"$"#,##0';
+        sheet.getCell(`F${kpiRow}`).font = { bold: true, color: { argb: 'FFBE123C' } }; // Red
+
+        // Net
+        sheet.getCell(`H${kpiRow}`).value = 'Utilidad Neta';
+        sheet.getCell(`H${kpiRow}`).font = { bold: true, color: { argb: 'FF64748B' } };
+        sheet.getCell(`I${kpiRow}`).value = kpis.net;
+        sheet.getCell(`I${kpiRow}`).numFmt = '"$"#,##0';
+        sheet.getCell(`I${kpiRow}`).font = { bold: true, color: { argb: 'FF1E293B' } };
+
+        // --- TREND TABLE ---
+        const trendStartRow = 9;
+        sheet.getCell(`B${trendStartRow}`).value = 'Evolución Mensual (Flujo Neto)';
+        sheet.getCell(`B${trendStartRow}`).font = { size: 14, bold: true };
+
+        sheet.getCell(`B${trendStartRow + 1}`).value = 'Mes';
+        sheet.getCell(`C${trendStartRow + 1}`).value = 'Flujo Neto';
+
+        // Header Style
+        ['B', 'C'].forEach(col => {
+            const cell = sheet.getCell(`${col}${trendStartRow + 1}`);
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+            cell.font = { bold: true };
+            cell.border = { bottom: { style: 'thin' } };
         });
 
-        this.dashboardSheet.addImage(imageId, {
-            tl: image.tl,
-            ext: { width: image.width, height: image.height },
-            editAs: 'oneCell'
+        trend.forEach((t, i) => {
+            const r = trendStartRow + 2 + i;
+            sheet.getCell(`B${r}`).value = t.month;
+            sheet.getCell(`C${r}`).value = t.net;
+            sheet.getCell(`C${r}`).numFmt = '"$"#,##0';
         });
+
+        // --- TOP EXPENSES TABLE ---
+        const expStartRow = 9;
+        const expStartCol = 'E';
+        sheet.getCell(`${expStartCol}${expStartRow}`).value = 'Top Categorías de Gasto';
+        sheet.getCell(`${expStartCol}${expStartRow}`).font = { size: 14, bold: true };
+
+        sheet.getCell(`${expStartCol}${expStartRow + 1}`).value = 'Categoría';
+        sheet.getCell(`F${expStartRow + 1}`).value = 'Monto';
+
+        // Header Style
+        ['E', 'F'].forEach(col => {
+            const cell = sheet.getCell(`${col}${expStartRow + 1}`);
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+            cell.font = { bold: true };
+            cell.border = { bottom: { style: 'thin' } };
+        });
+
+        expenses.forEach((e, i) => {
+            const r = expStartRow + 2 + i;
+            sheet.getCell(`${expStartCol}${r}`).value = e.name;
+            sheet.getCell(`F${r}`).value = e.value;
+            sheet.getCell(`F${r}`).numFmt = '"$"#,##0';
+        });
+
+        // Widths
+        sheet.getColumn('B').width = 20;
+        sheet.getColumn('C').width = 20;
+        sheet.getColumn('E').width = 30;
+        sheet.getColumn('F').width = 20;
     }
 
     public addTitle(title: string, subtitle: string) {

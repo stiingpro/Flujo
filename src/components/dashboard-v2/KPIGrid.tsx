@@ -22,35 +22,50 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
 
     return (
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${isPro ? '4' : '3'} gap-4 mb-6`}>
-            {/* Runway Card */}
-            <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100 shadow-sm relative overflow-hidden group">
+            {/* Runway Card (Oxígeno) */}
+            <Card className={cn(
+                "border-l-4 shadow-sm relative overflow-hidden group transition-all",
+                metrics.runway >= 6 ? "bg-emerald-50 border-l-emerald-500" :
+                    metrics.runway >= 3 ? "bg-yellow-50 border-l-yellow-500" :
+                        "bg-red-50 border-l-red-500"
+            )}>
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Wallet className="w-24 h-24 text-indigo-600" />
+                    <Wallet className={cn(
+                        "w-24 h-24",
+                        metrics.runway >= 6 ? "text-emerald-600" :
+                            metrics.runway >= 3 ? "text-yellow-600" :
+                                "text-red-600"
+                    )} />
                 </div>
                 <CardContent className="p-6">
                     <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-indigo-900/60">Runway Estimado</span>
+                        <span className="text-sm font-medium text-gray-600">Oxígeno (Runway)</span>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold text-indigo-900">{metrics.runway.toFixed(1)}</span>
-                            <span className="text-sm font-medium text-indigo-600">meses</span>
+                            <span className={cn(
+                                "text-4xl font-bold",
+                                metrics.runway >= 6 ? "text-emerald-700" :
+                                    metrics.runway >= 3 ? "text-yellow-700" :
+                                        "text-red-700"
+                            )}>{metrics.runway.toFixed(1)}</span>
+                            <span className="text-sm font-medium text-gray-600">meses</span>
                         </div>
-                        <p className="text-xs text-indigo-900/50 mt-2">
-                            Basado en tu saldo actual y burn rate promedio.
+                        <p className="text-xs text-gray-500 mt-2">
+                            {metrics.runway < 3 ? "¡Atención! Oxígeno crítico." : "Salud financiera estable."}
                         </p>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Burn Rate Card */}
-            <Card className="bg-white border-border shadow-sm group hover:border-orange-200 transition-colors">
+            {/* Burn Rate Card (Ritmo de Gasto) */}
+            <Card className="bg-white border-border shadow-sm group hover:border-orange-200 transition-colors border-l-4 border-l-transparent">
                 <CardContent className="p-6">
                     <div className="flex justify-between items-start">
                         <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium text-muted-foreground">Burn Rate Promedio</span>
+                            <span className="text-sm font-medium text-muted-foreground">Ritmo de Gasto</span>
                             <span className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.burnRate)}</span>
                             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                                 <Flame className="w-3 h-3 text-orange-500" />
-                                <span>Gasto mensual recurrente</span>
+                                <span>Promedio mensual (últ. 3 meses)</span>
                             </div>
                         </div>
                     </div>

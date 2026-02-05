@@ -93,7 +93,7 @@ export function DashboardV2() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-                        Clarity Dashboard <Sparkles className="w-5 h-5 text-amber-400 fill-amber-400" />
+                        Radar Financiero <Sparkles className="w-5 h-5 text-amber-400 fill-amber-400" />
                     </h2>
                     <p className="text-muted-foreground mt-1">
                         Visión financiera {filters.year}

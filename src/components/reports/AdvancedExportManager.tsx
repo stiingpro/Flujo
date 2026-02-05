@@ -73,58 +73,15 @@ export function AdvancedExportManager({ children }: { children: React.ReactNode 
 
             setReportData(processed);
 
-            // Wait for render cycle
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            if (!rendererRef.current) throw new Error('Renderer not initialized');
-
-            // 2. Capture Images
-            // Ensure fonts are loaded? html-to-image handles it mostly.
-
-            // Capture KPIs Area
-            // Capture Trend
-            // Capture Breakdown.
-            // For simplicity, let's capture the whole dashboard as one main image for now, 
-            // OR distinct sections if we tagged them with IDs. 
-            // The Plan said specific insertions.
-
-            // We can query selector inside the ref
-            const kpiNode = rendererRef.current.querySelector('#report-kpis') as HTMLElement;
-            const trendNode = rendererRef.current.querySelector('#report-trend') as HTMLElement;
-            const breakdownNode = rendererRef.current.querySelector('#report-breakdown') as HTMLElement;
-
-            const kpiImg = await toPng(kpiNode, { pixelRatio: 2 });
-            const trendImg = await toPng(trendNode, { pixelRatio: 2 });
-            const breakdownImg = await toPng(breakdownNode, { pixelRatio: 2 });
+            // 2. Prepare Data (No Image Capture needed for Excel now)
+            // But we still wait a sec to ensure state consistency if needed, though less critical.
 
             // 3. Build Excel
             const builder = new ExcelBuilder();
-            builder.addTitle(`Reporte Ejecutivo ${data.year}`, 'Resumen Financiero Anual');
+            // Title logic is now inside addSummarySheet or we can adjust
 
-            // Insert Images
-            // Row 5, Col 2 for KPIs
-            await builder.addImage({
-                base64: kpiImg,
-                width: 800,
-                height: 150,
-                tl: { col: 1, row: 4 }
-            });
-
-            // Row 15, Col 2 for Trend
-            await builder.addImage({
-                base64: trendImg,
-                width: 600,
-                height: 300,
-                tl: { col: 1, row: 14 }
-            });
-
-            // Row 15, Col 8 for Breakdown
-            await builder.addImage({
-                base64: breakdownImg,
-                width: 300,
-                height: 300,
-                tl: { col: 7, row: 14 }
-            });
+            // Add Summary Sheet (Text Based)
+            await builder.addSummarySheet(processed.kpis, processed.trend, processed.expenses);
 
             // 4. Add Legacy Details
             builder.addLegacyDataSheet(data.transactions, data.categories);
