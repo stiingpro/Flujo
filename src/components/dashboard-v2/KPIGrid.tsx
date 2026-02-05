@@ -106,7 +106,7 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
             <Card className="bg-white border-border shadow-sm">
                 <CardContent className="p-6">
                     <div className="flex flex-col gap-3">
-                        <span className="text-sm font-medium text-muted-foreground">Desempeño Mensual (Est.)</span>
+                        <span className="text-sm font-medium text-muted-foreground">Desempeño Mensual</span>
 
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col">
