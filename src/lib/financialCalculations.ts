@@ -1,9 +1,29 @@
 // src/lib/financialCalculations.ts
 import { Transaction, Category, DashboardFilters, MonthlyData, CategoryLevel, TransactionType, TransactionStatus, MONTH_NAMES } from '@/types';
 
+// Helper to determine the effective origin of a transaction based on its category
+function resolveOrigin(t: Transaction, categories: Category[]): string {
+    // If the transaction has a category object attached, use it
+    if (t.category) {
+        return t.category.level === 'personal' ? 'personal' : 'business';
+    }
+
+    // Otherwise try to find it in the list (if provided)
+    if (t.category_id && categories.length > 0) {
+        const cat = categories.find(c => c.id === t.category_id);
+        if (cat) {
+            return cat.level === 'personal' ? 'personal' : 'business';
+        }
+    }
+
+    // Fallback to the transaction's stored origin
+    return t.origin;
+}
+
 export function calculateMonthlyData(
     transactions: Transaction[],
-    filters: DashboardFilters
+    filters: DashboardFilters,
+    categories: Category[] = [] // Optional for backward compatibility, but recommended
 ): MonthlyData[] {
     const data: MonthlyData[] = [];
 
@@ -12,7 +32,10 @@ export function calculateMonthlyData(
             const [tYear, tMonth] = t.date.split('-').map(Number);
             const matchYear = tYear === filters.year;
             const matchMonth = tMonth === month;
-            const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
+
+            const effectiveOrigin = resolveOrigin(t, categories);
+            const matchOrigin = filters.origin === 'all' || effectiveOrigin === filters.origin;
+
             return matchYear && matchMonth && matchOrigin;
         });
 
@@ -69,7 +92,10 @@ export function calculateCategoryMonthlyData(
         const [tYear] = t.date.split('-').map(Number);
         const matchYear = tYear === filters.year;
         const matchType = t.type === type;
-        const matchOrigin = filters.origin === 'all' || t.origin === filters.origin;
+
+        const effectiveOrigin = resolveOrigin(t, categories);
+        const matchOrigin = filters.origin === 'all' || effectiveOrigin === filters.origin;
+
         return matchYear && matchType && matchOrigin;
     });
 

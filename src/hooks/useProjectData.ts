@@ -18,7 +18,7 @@ export function useProjectData() {
 
     // Computed Wrappers
     const getMonthlyData = () => {
-        return calculateMonthlyData(transactions, filters);
+        return calculateMonthlyData(transactions, filters, categories);
     };
 
     const getCategoryMonthlyData = (type: TransactionType) => {
