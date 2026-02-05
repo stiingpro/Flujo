@@ -26,7 +26,7 @@ export function ImportWizardModal() {
     const fileInputRef = useState<HTMLInputElement | null>(null);
 
     const { categories: existingCategories, addCategory } = useFinanceStore();
-    const { addTransactionAndSync, syncCategory } = useSupabaseSync();
+    const { addTransactionAndSync, syncCategory, syncAllToSupabase } = useSupabaseSync();
     const { user } = useAuth();
 
     // 1. Parse File
@@ -134,7 +134,11 @@ export function ImportWizardModal() {
                 return;
             }
 
-            // A. Sync New Categories First
+            // Prepare bulk arrays
+            const newCategoriesToCreate: any[] = [];
+            const newTransactionsToCreate: any[] = [];
+
+            // A. Prepare New Categories
             const newCatNames = stats?.newCategories || [];
             const catMap = new Map<string, string>(); // Name -> ID
 
@@ -150,32 +154,30 @@ export function ImportWizardModal() {
                         id: newId,
                         name: catName, // Original casing
                         type: rowsToImport.find(r => r.categoryName === catName)?.type || 'expense',
-                        level: 'empresa' as const, // Default, user can change later
+                        level: 'empresa' as const,
                         is_fixed: false,
                         created_at: new Date().toISOString(),
                         user_id: user?.id || 'anonymous',
                     };
 
-                    // We use syncCategory from hook which handles store + supabase
-                    await syncCategory(newCat);
+                    newCategoriesToCreate.push(newCat);
                     catMap.set(normName, newId);
                 }
             }
 
-            // B. Sync Transactions
-            let successCount = 0;
+            // B. Prepare New Transactions
             for (const row of rowsToImport) {
                 const catId = catMap.get(row.categoryName.toUpperCase());
-                if (!catId) continue; // Should not happen if logic above works
+                if (!catId) continue;
 
                 const newTx = {
                     id: crypto.randomUUID(),
                     date: row.date.toISOString().split('T')[0],
-                    amount: row.amount, // Positive number
+                    amount: row.amount,
                     description: row.description,
                     category_id: catId,
                     type: row.type,
-                    status: row.status, // Use the detected status (Real vs Projected)
+                    status: row.status, // Dynamic status
                     origin: 'business' as const,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
@@ -183,24 +185,45 @@ export function ImportWizardModal() {
                     paymentStatus: 'confirmed' as const,
                     currency_code: 'CLP',
                     exchange_rate: 1,
-
                 };
 
-                // Use hook to ensure store + DB sync
-                // Note: performing this in loop is slow for 1000s of rows but safe for 100s.
-                // For bulk, we'd use a dedicated bulk insert RPC or endpoint, but reusing existing hook logic ensures consistency.
-                await addTransactionAndSync(newTx);
-                successCount++;
+                newTransactionsToCreate.push(newTx);
             }
 
-            toast.success(`Importados ${successCount} registros exitosamente.`);
+            // C. Bulk Sync to Supabase
+            // We export a helper from useSupabaseSync that can bulk insert.
+            // Using syncAllToSupabase with explicit arrays to only insert NEW items.
+            // Note: syncAllToSupabase(newTx, newCats) will upsert these specific items.
+
+            // Important: We need to update local Store FIRST or AFTER? 
+            // Usually optimistically: Update Store, then Sync.
+            // However, useSupabaseSync hook functions usually take care of syncing.
+            // But syncAllToSupabase is just a wrapper around bulkUpsert.
+
+            // 1. Update Store (Optimistic - Single Render)
+            const { setTransactions, setCategories, transactions, categories } = useFinanceStore.getState();
+
+            if (newCategoriesToCreate.length > 0) {
+                setCategories([...categories, ...newCategoriesToCreate]);
+            }
+            if (newTransactionsToCreate.length > 0) {
+                setTransactions([...transactions, ...newTransactionsToCreate]);
+            }
+
+            // 2. Sync to DB
+            // We need the function from the hook
+            await syncAllToSupabase(newTransactionsToCreate, newCategoriesToCreate);
+
+            toast.success(`Importados ${newTransactionsToCreate.length} registros exitosamente.`);
             setOpen(false);
             resetState();
 
         } catch (err: any) {
             console.error(err);
             toast.error('Error durante la importación: ' + err.message);
-            setStep('preview'); // Go back to preview on error
+            // Optional: Rollback store if DB fails? 
+            // For now, simple implementation assuming success or reload.
+            setStep('preview');
         } finally {
             setIsProcessing(false);
         }
