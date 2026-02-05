@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { SmartMonthTable } from './SmartMonthTable';
+import { SummaryTable } from './SummaryTable';
 import { FocusToggle, FocusMode } from './FocusToggle';
 import { InvestorToggle } from '@/components/dashboard/InvestorToggle';
 import { ImportWizardModal } from '@/components/import/ImportWizardModal';
@@ -14,7 +15,7 @@ import { useFeatureMode } from '@/context/FeatureModeContext';
 import { useMonthlyBalances } from '@/hooks/useMonthlyBalances';
 import { MainTab, MonthlyBalance } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingDown, TrendingUp, Sparkles, Filter, Bot } from 'lucide-react';
+import { TrendingDown, TrendingUp, Sparkles, Filter, Bot, Scale } from 'lucide-react';
 import { Toaster } from 'sonner';
 
 import { resolveOrigin } from '@/lib/financialCalculations'; // Import helper
@@ -22,7 +23,7 @@ import { resolveOrigin } from '@/lib/financialCalculations'; // Import helper
 export function DashboardV2() {
     const [focusMode, setFocusMode] = useState<FocusMode>('all');
     const [isInvestorMode, setIsInvestorMode] = useState(false);
-    const [activeTab, setActiveTab] = useState<'gastos' | 'ingresos'>('gastos');
+    const [activeTab, setActiveTab] = useState<MainTab>('gastos');
     const { transactions, filters, setFilters, categories } = useFinanceStore(); // Get categories
     const { isPro } = useFeatureMode();
 
@@ -192,6 +193,10 @@ export function DashboardV2() {
                                 <TrendingUp className="w-4 h-4 text-emerald-500" />
                                 Ingresos
                             </TabsTrigger>
+                            <TabsTrigger value="resumen" className="gap-2 px-6 text-blue-600 data-[state=active]:text-blue-700">
+                                <Scale className="w-4 h-4" />
+                                Resumen
+                            </TabsTrigger>
                         </TabsList>
 
                         <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -206,6 +211,10 @@ export function DashboardV2() {
 
                     <TabsContent value="ingresos" className="m-0 focus-visible:ring-0">
                         <SmartMonthTable filterType="income" focusMode={focusMode} />
+                    </TabsContent>
+
+                    <TabsContent value="resumen" className="m-0 focus-visible:ring-0">
+                        <SummaryTable focusMode={focusMode} />
                     </TabsContent>
                 </Tabs>
             </div>
