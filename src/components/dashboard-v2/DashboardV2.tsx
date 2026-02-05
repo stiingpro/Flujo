@@ -21,12 +21,10 @@ export function DashboardV2() {
     const [focusMode, setFocusMode] = useState<FocusMode>('all');
     const [isInvestorMode, setIsInvestorMode] = useState(false);
     const [activeTab, setActiveTab] = useState<'gastos' | 'ingresos'>('gastos');
-    const { filters } = useFinanceStore();
-    const { balances, isLoading: isLoadingBalances } = useMonthlyBalances();
-    const { isPro } = useFeatureMode(); // Add context hook
-    const { setFilters } = useFinanceStore();
+    const { transactions, filters, setFilters } = useFinanceStore();
+    const { isPro } = useFeatureMode();
 
-    // Sync FocusMode with Global Store Filters (so Export buttons work correctly)
+    // Sync FocusMode with Global Store Filters
     useEffect(() => {
         const originMap: Record<FocusMode, 'all' | 'business' | 'personal'> = {
             'all': 'all',
@@ -36,71 +34,103 @@ export function DashboardV2() {
         setFilters({ origin: originMap[focusMode] });
     }, [focusMode, setFilters]);
 
-    // Reset Investor Mode when returning to Standard
+    // Reset Investor Mode
     useEffect(() => {
-        if (!isPro) {
-            setIsInvestorMode(false);
-        }
+        if (!isPro) setIsInvestorMode(false);
     }, [isPro]);
 
-    // Calculate Real Metrics
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1; // 1-12
-    const currentYear = currentDate.getFullYear(); // e.g. 2026
-
-    // 1. Current Month Data
-    const currentMonthData = balances.find((b: MonthlyBalance) => b.year === filters.year && b.month === currentMonth) || {
-        total_income: 0,
-        total_expense: 0,
-        net_flow: 0
-    };
-
-    // 2. Last Month Data (for Delta)
-    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-    const lastMonthYear = currentMonth === 1 ? filters.year - 1 : filters.year;
-    const lastMonthData = balances.find((b: MonthlyBalance) => b.year === lastMonthYear && b.month === lastMonth);
-
-    // Delta percentage calculation
-    const lastMonthNet = lastMonthData?.net_flow || 1; // Avoid division by zero
-    const currentNet = currentMonthData.net_flow;
-    const rawDelta = lastMonthData ? ((currentNet - lastMonthNet) / Math.abs(lastMonthNet)) * 100 : 0;
-    const lastMonthDelta = isFinite(rawDelta) ? rawDelta : 0;
-
-    // 3. Burn Rate (Average expense of last 3 months)
-    // Filter relevant months
-    const last3Months = balances
-        .filter((b: MonthlyBalance) => {
-            const bDate = new Date(b.year, b.month - 1);
-            const now = new Date(currentYear, currentMonth - 1);
-            const diffTime = Math.abs(now.getTime() - bDate.getTime());
-            const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
-            return diffMonths <= 3 && b.total_expense > 0;
+    // --- CLIENT-SIDE KPI CALCULATION (Dynamic Filtering) ---
+    // This replaces useMonthlyBalances db view to ensure strict filtering by origin
+    const calculateMetrics = () => {
+        // 1. Filter Transactions based on View Mode
+        const relevantTransactions = transactions.filter(t => {
+            if (focusMode === 'company' && t.origin !== 'business') return false;
+            if (focusMode === 'personal' && t.origin !== 'personal') return false;
+            return true;
         });
 
-    const avgBurnRate = last3Months.length > 0
-        ? last3Months.reduce((acc: number, curr: MonthlyBalance) => acc + Number(curr.total_expense), 0) / last3Months.length
-        : 0;
+        // 2. Calculate Monthly Totals for Current Year and Previous Year (for Delta/Runway)
+        // We need previous year strictly for "Last Month Delta" if we are in Jan
+        const getMonthTotal = (year: number, month: number) => {
+            return relevantTransactions
+                .filter(t => {
+                    const d = new Date(t.date);
+                    return d.getFullYear() === year && (d.getMonth() + 1) === month;
+                })
+                .reduce((acc, t) => {
+                    const amount = t.amount;
+                    return {
+                        income: acc.income + (t.type === 'income' ? amount : 0),
+                        expense: acc.expense + (t.type === 'expense' ? amount : 0),
+                    };
+                }, { income: 0, expense: 0 });
+        };
 
-    // 4. Runway (Current Cash / Burn Rate)
-    // Find absolute latest balance (cumulative utility)
-    const latestBalanceRecord = [...balances].sort((a: MonthlyBalance, b: MonthlyBalance) => (a.year * 100 + a.month) - (b.year * 100 + b.month)).pop();
-    const currentCash = latestBalanceRecord?.cumulative_utility || 0;
-    const runway = avgBurnRate > 0 ? (currentCash / avgBurnRate) : 0;
+        const currentDate = new Date();
+        const currentYear = filters.year; // Use selected year for dashboard view
+        const currentMonth = currentDate.getMonth() + 1; // Real current month
 
+        // Use the selected year's data for the "Monthly Performance" card
+        // If selected year is distinct from real time, we imply "Current View Month". 
+        // But usually KPIs refer to "Now". Let's assume dashboard shows selected year context, 
+        // but runway is always "Today's Cash" / "Average Burn".
 
-    // 5. Net Margin % (Net Income / Total Income)
-    const netMargin = currentMonthData.total_income > 0
-        ? ((currentMonthData.total_income - currentMonthData.total_expense) / currentMonthData.total_income) * 100
-        : 0;
+        // For "Desempeño Mensual", assume we show the current calendar month if within selected year, 
+        // otherwise show first month or average? 
+        // Feedback image shows "FEB HOY", so we align to current real-time month if visible, or strict 'today'.
 
-    const metrics = {
-        runway: runway,
-        burnRate: avgBurnRate,
-        monthlyRevenue: Number(currentMonthData.total_income),
-        monthlyExpense: Number(currentMonthData.total_expense),
-        lastMonthDelta: lastMonthDelta,
-        netMargin: netMargin,
+        // A. Current Month Performance (Real Time Context)
+        const perfYear = currentDate.getFullYear();
+        const perfMonth = currentMonth;
+        const currentMonthStats = getMonthTotal(perfYear, perfMonth);
+
+        // B. Last Month (for Delta)
+        const lastMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        const lastMonthStats = getMonthTotal(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1);
+
+        // Delta (Net Flow)
+        const currentNet = currentMonthStats.income - currentMonthStats.expense;
+        const lastNet = lastMonthStats.income - lastMonthStats.expense;
+        const lastMonthDelta = lastNet !== 0 ? ((currentNet - lastNet) / Math.abs(lastNet)) * 100 : 0;
+
+        // C. Burn Rate (Last 3 Months Average Expense)
+        // Iterate backwards 3 months from now
+        let totalBurn = 0;
+        let monthsCounted = 0;
+        for (let i = 1; i <= 3; i++) {
+            const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+            const stats = getMonthTotal(d.getFullYear(), d.getMonth() + 1);
+            if (stats.expense > 0) {
+                totalBurn += stats.expense;
+                monthsCounted++;
+            }
+        }
+        const avgBurnRate = monthsCounted > 0 ? totalBurn / monthsCounted : 0;
+
+        // D. Runway (Total Cash / Burn Rate)
+        // Total Cash is Cumulative Utility of ALL TIME (filtered)
+        const totalIncomeAll = relevantTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const totalExpenseAll = relevantTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+        const currentCash = totalIncomeAll - totalExpenseAll;
+
+        const runway = avgBurnRate > 0 ? (currentCash / avgBurnRate) : 0;
+
+        // E. Net Margin
+        const netMargin = currentMonthStats.income > 0
+            ? ((currentMonthStats.income - currentMonthStats.expense) / currentMonthStats.income) * 100
+            : 0;
+
+        return {
+            runway,
+            burnRate: avgBurnRate,
+            monthlyRevenue: currentMonthStats.income,
+            monthlyExpense: currentMonthStats.expense,
+            lastMonthDelta,
+            netMargin
+        };
     };
+
+    const metrics = calculateMetrics();
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">

@@ -17,8 +17,8 @@ export class ExcelBuilder {
 
     constructor() {
         this.workbook = new ExcelJS.Workbook();
-        this.workbook.creator = 'FlujoExpert';
-        this.workbook.lastModifiedBy = 'FlujoExpert';
+        this.workbook.creator = 'Radar Financiero';
+        this.workbook.lastModifiedBy = 'Radar Financiero';
         this.workbook.created = new Date();
         this.workbook.modified = new Date();
 

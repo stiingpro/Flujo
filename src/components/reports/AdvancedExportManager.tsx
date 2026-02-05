@@ -86,7 +86,7 @@ export function AdvancedExportManager({ children }: { children: React.ReactNode 
             // 4. Add Legacy Details
             builder.addLegacyDataSheet(data.transactions, data.categories);
 
-            await builder.download(`FlujoExpert_Dashboard_${data.year}.xlsx`);
+            await builder.download(`RadarFinanciero_Dashboard_${data.year}.xlsx`);
             toast.success('Reporte Avanzado Generado');
 
         } catch (error) {

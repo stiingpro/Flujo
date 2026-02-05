@@ -34,7 +34,7 @@ export function PDFExportButton() {
         return matchYear && matchOrigin && matchProjected;
     });
 
-    const fileName = `Reporte_Financiero_${filters.year}.pdf`;
+    const fileName = `RadarFinanciero_Reporte_${filters.year}.pdf`;
 
     return (
         <PDFDownloadLink

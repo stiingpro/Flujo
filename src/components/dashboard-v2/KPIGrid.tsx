@@ -36,8 +36,15 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
                             )}>{metrics.runway.toFixed(1)}</span>
                             <span className="text-sm font-medium text-gray-500">meses</span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-2 max-w-[120px]">
-                            {metrics.runway < 3 ? "Nivel Crítico" : "Nivel Saludable"}
+                        <p className={cn(
+                            "text-xs mt-2 max-w-[120px] font-medium",
+                            metrics.runway < 3 ? "text-rose-500" :
+                                metrics.runway < 6 ? "text-yellow-600" :
+                                    "text-emerald-500"
+                        )}>
+                            {metrics.runway < 3 ? "Nivel Crítico" :
+                                metrics.runway < 6 ? "Nivel Precaución" :
+                                    "Nivel Saludable"}
                         </p>
                     </div>
 
@@ -48,18 +55,21 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
                             {/* Arc Background */}
                             <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#f1f5f9" strokeWidth="8" strokeLinecap="round" />
 
-                            {/* Colorful Segments */}
-                            {/* Red (0-3) */}
-                            <path d="M 10 50 A 40 40 0 0 1 30 15.3" fill="none" stroke="#f43f5e" strokeWidth="8" strokeLinecap="round" opacity="0.2" /> {/* ~0 to 30% */}
-                            {/* Yellow (3-6) */}
-                            <path d="M 30 15.3 A 40 40 0 0 1 70 15.3" fill="none" stroke="#eab308" strokeWidth="8" opacity="0.2" />
-                            {/* Green (6+) */}
-                            <path d="M 70 15.3 A 40 40 0 0 1 90 50" fill="none" stroke="#10b981" strokeWidth="8" strokeLinecap="round" opacity="0.2" />
+                            {/* Colorful Segments (Scale 0 to 12 months) */}
+                            {/* Red (0-3 months) -> 0 to 25% of 180deg (45deg slice) -> End angle 225deg (SVG coords) -> Point ~21.7, 21.7 */}
+                            <path d="M 10 50 A 40 40 0 0 1 21.7 21.7" fill="none" stroke="#f43f5e" strokeWidth="8" strokeLinecap="round" opacity="0.2" />
 
-                            {/* Needle */}
+                            {/* Yellow (3-6 months) -> 25% to 50% -> End angle 270deg -> Point 50, 10 */}
+                            <path d="M 21.7 21.7 A 40 40 0 0 1 50 10" fill="none" stroke="#eab308" strokeWidth="8" opacity="0.2" />
+
+                            {/* Green (6-12+ months) -> 50% to 100% -> End angle 360deg -> Point 90, 50 */}
+                            <path d="M 50 10 A 40 40 0 0 1 90 50" fill="none" stroke="#10b981" strokeWidth="8" strokeLinecap="round" opacity="0.2" />
+
+                            {/* Needle (Range 0-12) */}
                             <g style={{
                                 transformOrigin: '50px 50px',
-                                transform: `rotate(${Math.max(0, Math.min(180, (Math.max(0, metrics.runway) / 6) * 180)) - 180}deg)`,
+                                // Map 0-12 months to 0-180 degrees
+                                transform: `rotate(${(Math.min(12, Math.max(0, metrics.runway)) / 12) * 180}deg)`,
                                 transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}>
                                 <line x1="50" y1="50" x2="10" y2="50" stroke="#1e293b" strokeWidth="3" strokeLinecap="round" />
@@ -69,7 +79,8 @@ export function KPIGrid({ metrics }: { metrics: KPIMetrics }) {
                         <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[8px] text-gray-400 px-1 -mb-1">
                             <span>0m</span>
                             <span>3m</span>
-                            <span>6m+</span>
+                            <span className="pl-1">6m</span>
+                            <span>12m+</span>
                         </div>
                     </div>
                 </CardContent>

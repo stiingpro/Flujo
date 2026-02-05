@@ -92,13 +92,13 @@ export default function DashboardPage() {
               <div className="relative h-10 w-10 overflow-hidden rounded-lg">
                 <Image
                   src="/logo-new.png"
-                  alt="FlujoExpert Logo"
+                  alt="Radar Financiero Logo"
                   fill
                   className="object-contain"
                 />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">FlujoExpert</h1>
+                <h1 className="text-xl font-bold text-gray-900">Radar Financiero</h1>
                 <p className="text-xs text-muted-foreground">Gestión de Flujo de Caja</p>
               </div>
             </div>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
       < footer className="border-t bg-white mt-12" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>© {currentYear} FlujoGlobal</p>
+            <p>© {currentYear} Radar Financiero</p>
             <p>Gestión inteligente de flujo de caja</p>
           </div>
         </div>

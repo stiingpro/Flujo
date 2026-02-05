@@ -15,10 +15,10 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Radar Financiero | FlujoExpert",
+  title: "Radar Financiero | Plataforma",
   description: "Aplicación para la gestión unificada de flujo de caja empresarial y personal. Control diario, proyecciones y análisis financiero.",
   keywords: ["flujo de caja", "finanzas", "contabilidad", "gestión financiera", "P&L"],
-  authors: [{ name: "FlujoGlobal" }],
+  authors: [{ name: "Radar Financiero" }],
   manifest: "/manifest.json",
 };
 

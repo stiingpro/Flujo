@@ -148,12 +148,12 @@ export const FinancialReportPDF = ({ transactions, filters }: FinancialReportPro
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.title}>Reporte Financiero Global</Text>
+                        <Text style={styles.title}>Reporte Ejecutivo</Text>
                         <Text style={styles.subtitle}>Año Fiscal: {filters.year}</Text>
                     </View>
                     <View>
                         <Text style={styles.subtitle}>{new Date().toLocaleDateString('es-CL')}</Text>
-                        <Text style={styles.subtitle}>FlujoGlobal v2.0</Text>
+                        <Text style={styles.subtitle}>Radar Financiero</Text>
                     </View>
                 </View>
 
@@ -177,13 +177,13 @@ export const FinancialReportPDF = ({ transactions, filters }: FinancialReportPro
 
                 {/* Monthly Breakdown Table */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Desglose Mensual</Text>
+                    <Text style={styles.sectionTitle}>Evolución Mensual</Text>
                     <View style={styles.table}>
                         <View style={styles.tableRow}>
                             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Mes</Text></View>
                             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Ingresos</Text></View>
                             <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Gastos</Text></View>
-                            <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Neto</Text></View>
+                            <View style={styles.tableColHeader}><Text style={styles.tableCellHeader}>Flujo Neto</Text></View>
                         </View>
                         {MONTH_NAMES.map((month, index) => {
                             const monthIncome = income.filter(t => new Date(t.date).getMonth() === index).reduce((a, b) => a + b.amount, 0);
@@ -206,8 +206,32 @@ export const FinancialReportPDF = ({ transactions, filters }: FinancialReportPro
                     </View>
                 </View>
 
+                {/* Top Expenses Table (New to match Excel) */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Top Categorías de Gasto</Text>
+                    <View style={styles.table}>
+                        <View style={styles.tableRow}>
+                            <View style={[styles.tableColHeader, { width: '70%' }]}><Text style={styles.tableCellHeader}>Categoría</Text></View>
+                            <View style={[styles.tableColHeader, { width: '30%' }]}><Text style={styles.tableCellHeader}>Monto</Text></View>
+                        </View>
+                        {Object.entries(expenses.reduce((acc, t) => {
+                            const catName = t.category?.name || 'Sin Categoría';
+                            acc[catName] = (acc[catName] || 0) + t.amount;
+                            return acc;
+                        }, {} as Record<string, number>))
+                            .sort(([, a], [, b]) => b - a)
+                            .slice(0, 5)
+                            .map(([name, value]) => (
+                                <View style={styles.tableRow} key={name}>
+                                    <View style={[styles.tableCol, { width: '70%' }]}><Text style={styles.tableCell}>{name}</Text></View>
+                                    <View style={[styles.tableCol, { width: '30%' }]}><Text style={styles.tableCell}>{formatCurrency(value)}</Text></View>
+                                </View>
+                            ))}
+                    </View>
+                </View>
+
                 <Text style={styles.footer}>
-                    Reporte confidencial generado automáticamente por FlujoGlobal.
+                    Reporte confidencial generado automáticamente por Radar Financiero.
                 </Text>
             </Page>
         </Document>
