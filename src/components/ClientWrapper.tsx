@@ -7,8 +7,15 @@ import { FeatureModeProvider } from '@/context/FeatureModeContext';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { BetaModeSwitch } from '@/components/common/BetaModeSwitch';
 import { AdvancedExportManager } from './reports/AdvancedExportManager';
+import { BetaWelcomeModal } from '@/components/modals/BetaWelcomeModal';
+import { initAnalytics } from '@/lib/analytics';
+import { useEffect } from 'react';
 
 export function ClientWrapper({ children }: { children: React.ReactNode }) {
+    useEffect(() => {
+        initAnalytics();
+    }, []);
+
     return (
         <AuthProvider>
             <ThemeProvider
@@ -22,6 +29,7 @@ export function ClientWrapper({ children }: { children: React.ReactNode }) {
                         <AdvancedExportManager>
                             {children}
                             <BetaModeSwitch />
+                            <BetaWelcomeModal />
                             <Toaster />
                         </AdvancedExportManager>
                     </FeatureModeProvider>
